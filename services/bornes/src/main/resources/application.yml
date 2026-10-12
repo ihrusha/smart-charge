@@ -1,0 +1,15 @@
+server:
+  port: 3001
+
+spring:
+  application:
+    name: bornes
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/bornes
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
