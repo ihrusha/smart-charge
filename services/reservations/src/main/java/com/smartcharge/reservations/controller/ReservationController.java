@@ -41,19 +41,19 @@ public class ReservationController {
     }
 
     @GetMapping
-    public List<Reservation> list(@RequestAttribute("userId") Integer userId) {
-        return repository.findByUserIdOrderByDateAscHeureDebutAsc(String.valueOf(userId));
+    public List<Reservation> list(@RequestAttribute("userId") String userId) {
+        return repository.findByUserIdOrderByDateAscHeureDebutAsc(userId);
     }
 
     @GetMapping("/{id}")
     public Reservation get(@PathVariable String id,
-                           @RequestAttribute("userId") Integer userId) {
+                           @RequestAttribute("userId") String userId) {
         return findOwned(id, userId);
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateReservationRequest body,
-                                    @RequestAttribute("userId") Integer userId) {
+                                    @RequestAttribute("userId") String userId) {
         String erreur = valider(body);
         if (erreur != null) {
             return ResponseEntity.badRequest().body(Map.of("error", erreur));
@@ -61,7 +61,7 @@ public class ReservationController {
 
         Reservation r = new Reservation();
         r.setBorneId(body.borneId().trim());
-        r.setUserId(String.valueOf(userId));
+        r.setUserId(userId);
         r.setDate(body.date());
         r.setHeureDebut(body.heureDebut());
         r.setStatut(Statut.CONFIRMEE);
@@ -77,7 +77,7 @@ public class ReservationController {
 
     @PatchMapping("/{id}/annulation")
     public Reservation cancel(@PathVariable String id,
-                              @RequestAttribute("userId") Integer userId) {
+                              @RequestAttribute("userId") String userId) {
         Reservation r = findOwned(id, userId);
         r.setStatut(Statut.ANNULEE);
         return repository.save(r);
@@ -105,9 +105,9 @@ public class ReservationController {
         return null;
     }
 
-    private Reservation findOwned(String id, Integer userId) {
+    private Reservation findOwned(String id, String userId) {
         return repository.findById(id)
-                .filter(r -> String.valueOf(userId).equals(r.getUserId()))
+                .filter(r -> userId.equals(r.getUserId()))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Réservation introuvable"));
     }
