@@ -1,0 +1,18 @@
+server:
+  port: 3002
+
+spring:
+  application:
+    name: reservations
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/reservations
+
+bornes:
+  url: http://localhost:3001
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
