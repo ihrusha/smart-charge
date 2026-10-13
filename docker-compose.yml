@@ -1,10 +1,58 @@
 services:
-  mongo:
+  mongo-bornes:
     image: mongo:7
+    restart: unless-stopped
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_BORNES_ROOT_PASSWORD}
+      APP_PASSWORD: ${MONGO_BORNES_APP_PASSWORD}
     volumes:
-      - mongo-data:/data/db
+      - mongo-bornes-data:/data/db
+      - ./infra/mongo/init-bornes.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-reservations:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_RESERVATIONS_ROOT_PASSWORD}
+      APP_PASSWORD: ${MONGO_RESERVATIONS_APP_PASSWORD}
+    volumes:
+      - mongo-reservations-data:/data/db
+      - ./infra/mongo/init-reservations.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-users:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: smartcharge_users
+      POSTGRES_USER: users_app
+      POSTGRES_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+    volumes:
+      - postgres-users-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U users_app -d smartcharge_users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  mongo-data:
+  mongo-bornes-data:
+  mongo-reservations-data:
+  postgres-users-data:
