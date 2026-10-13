@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     stations_service_url: str = "http://localhost:3001"
     cors_origins: list[str] = ["http://localhost:4200"]
     http_timeout_seconds: float = 5.0
+    auth_service_url: str = "http://localhost:3003"
 
 
 @lru_cache
