@@ -4,9 +4,11 @@ server:
 spring:
   application:
     name: reservations
+  mongodb:
+    uri: mongodb://localhost:27017/reservations
   data:
     mongodb:
-      uri: mongodb://localhost:27017/reservations
+      auto-index-creation: true
 
 bornes:
   url: http://localhost:3001
