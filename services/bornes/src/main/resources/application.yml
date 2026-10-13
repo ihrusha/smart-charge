@@ -4,9 +4,8 @@ server:
 spring:
   application:
     name: bornes
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/bornes
+  mongodb:
+    uri: ${BORNES_MONGO_URI:mongodb://bornes_app:usr-mdp@localhost:27017/smartcharge_bornes}
 
 management:
   endpoints:
