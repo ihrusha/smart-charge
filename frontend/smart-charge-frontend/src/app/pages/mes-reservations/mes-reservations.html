@@ -8,6 +8,9 @@
     <button type="button"
             [class.actif]="onglet() === 'passees'"
             (click)="changerOnglet('passees')">Passées</button>
+    <button type="button"
+            [class.actif]="onglet() === 'annulees'"
+            (click)="changerOnglet('annulees')">Annulées</button>
   </div>
 
   @if (chargement()) {
@@ -18,16 +21,18 @@
     <p class="erreur">{{ erreur() }}</p>
   }
 
+  @if (message()) {
+    <p class="succes">{{ message() }}</p>
+  }
+
   @if (!chargement()) {
     <div class="bornes-grid">
       @for (r of reservationsAffichees(); track r.id) {
         <article class="borne-card">
-          <div class="ligne-titre">
-            <h3>{{ nomBorne(r.borneId) }}</h3>
-            <span class="badge" [class.annulee]="r.statut === 'ANNULEE'">
-              {{ r.statut === 'CONFIRMEE' ? 'Confirmée' : 'Annulée' }}
-            </span>
-          </div>
+          <span class="badge" [class.annulee]="r.statut === 'ANNULEE'">
+            {{ r.statut === 'CONFIRMEE' ? 'Confirmée' : 'Annulée' }}
+          </span>
+          <h3>{{ nomBorne(r.borneId) }}</h3>
 
           <p>{{ creneau(r) }}</p>
 
@@ -40,11 +45,7 @@
           }
         </article>
       } @empty {
-        <p>
-          {{ onglet() === 'avenir'
-             ? "Vous n'avez aucune réservation à venir."
-             : "Vous n'avez aucune réservation passée." }}
-        </p>
+        <p>{{ messageVide() }}</p>
       }
     </div>
   }

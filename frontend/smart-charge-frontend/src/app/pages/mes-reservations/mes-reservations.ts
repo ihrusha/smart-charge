@@ -4,6 +4,8 @@ import { forkJoin } from 'rxjs';
 import { Borne, BorneService } from '../../services/borne.service';
 import { Reservation, ReservationService } from '../../services/reservation.service';
 
+type Onglet = 'avenir' | 'passees' | 'annulees';
+
 @Component({
   selector: 'app-mes-reservations',
   imports: [],
@@ -19,7 +21,8 @@ export class MesReservations implements OnInit {
 
   chargement = signal(true);
   erreur = signal('');
-  onglet = signal<'avenir' | 'passees'>('avenir');
+  message = signal('');
+  onglet = signal<Onglet>('avenir');
   annulationEnCours = signal<string | null>(null);
 
   // Une réservation est "à venir" si son créneau n'a pas encore commencé
@@ -27,14 +30,23 @@ export class MesReservations implements OnInit {
     return new Date(`${r.date}T${r.heureDebut}`) > new Date();
   }
 
-  reservationsAffichees = computed(() => {
-    const avenir = this.onglet() === 'avenir';
-    return this.reservations()
-      .filter((r) => this.estAVenir(r) === avenir)
+  private correspond(r: Reservation, onglet: Onglet): boolean {
+    if (onglet === 'annulees') {
+      return r.statut === 'ANNULEE';
+    }
+    if (r.statut === 'ANNULEE') {
+      return false;
+    }
+    return this.estAVenir(r) === (onglet === 'avenir');
+  }
+
+  reservationsAffichees = computed(() =>
+    this.reservations()
+      .filter((r) => this.correspond(r, this.onglet()))
       .sort((a, b) =>
         `${a.date}T${a.heureDebut}`.localeCompare(`${b.date}T${b.heureDebut}`)
-      );
-  });
+      )
+  );
 
   ngOnInit(): void {
     forkJoin({
@@ -78,12 +90,22 @@ export class MesReservations implements OnInit {
     return `${jour} · ${heure(debut)} – ${heure(fin)}`;
   }
 
-  changerOnglet(valeur: 'avenir' | 'passees'): void {
+  messageVide(): string {
+    switch (this.onglet()) {
+      case 'avenir': return "Vous n'avez aucune réservation à venir.";
+      case 'passees': return "Vous n'avez aucune réservation passée.";
+      default: return "Vous n'avez annulé aucune réservation.";
+    }
+  }
+
+  changerOnglet(valeur: Onglet): void {
     this.onglet.set(valeur);
+    this.message.set('');
   }
 
   annuler(r: Reservation): void {
     this.erreur.set('');
+    this.message.set('');
     this.annulationEnCours.set(r.id);
 
     this.reservationService.annuler(r.id).subscribe({
@@ -92,6 +114,7 @@ export class MesReservations implements OnInit {
           liste.map((item) => (item.id === misAJour.id ? misAJour : item))
         );
         this.annulationEnCours.set(null);
+        this.message.set('Réservation annulée. Vous la retrouvez dans l\'onglet « Annulées ».');
       },
       error: (err) => {
         this.annulationEnCours.set(null);
