@@ -103,7 +103,8 @@ export class App implements OnInit, AfterViewInit {
       const marqueur = L.marker([
         borne.latitude,
         borne.longitude
-      ]
+      ], 
+
       { icon: iconeBorne }
     
     ).addTo(this.map);
