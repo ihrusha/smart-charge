@@ -1,14 +1,10 @@
-import dotenv from "dotenv";
+import "dotenv/config";
+import app from "./app.js";
+import { db } from "./db.js";
 
-dotenv.config();
 const port = Number(process.env.PORT) || 3003;
 
 async function start() {
-  const [{ default: app }, { db }] = await Promise.all([
-    import("./app"),
-    import("./db"),
-  ]);
-
   await db.query("SELECT 1");
 
   const server = app.listen(port, () => {
@@ -18,7 +14,7 @@ async function start() {
   async function shutdown(signal: string) {
     console.log(`${signal} received; shutting down`);
 
-    server.close(async (error) => {
+    server.close(async (error: Error | undefined) => {
       if (error) {
         console.error("Error during shutdown:", error);
         process.exitCode = 1;
