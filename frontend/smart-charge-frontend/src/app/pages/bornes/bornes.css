@@ -1,0 +1,249 @@
+
+/* ===== PAGE BORNES ===== */
+
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  font-family: Arial, sans-serif;
+  color: #1f2937;
+}
+
+/* ===== EN-TÊTE ===== */
+
+.header {
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #173c30;
+}
+
+.header p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ===== RECHERCHE ET FILTRES ===== */
+
+.recherche-section {
+  margin-bottom: 24px;
+}
+
+.filtres {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.recherche-input {
+  width: 280px;
+  max-width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+}
+
+.recherche-input:focus {
+  border-color: #168365;
+}
+
+.filtre-btn {
+  padding: 11px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 25px;
+  background: white;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filtre-btn:hover {
+  border-color: #168365;
+  color: #168365;
+}
+
+/* ===== DISPOSITION PRINCIPALE ===== */
+
+.bornes-layout {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* ===== LISTE DES BORNES ===== */
+
+.liste-panel {
+  background: #f8faf9;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  height: 550px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.liste-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.liste-header h2 {
+  font-size: 16px;
+  margin: 0;
+  color: #173c30;
+}
+
+.liste-header span {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.bornes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.borne-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.borne-card:hover {
+  border-color: #168365;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+.borne-card h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #173c30;
+  margin: 0 0 10px;
+}
+
+.borne-adresse {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 12px;
+}
+
+.borne-infos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.borne-infos span {
+  background: #e8f5ee;
+  color: #168365;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ===== CARTE LEAFLET ===== */
+
+.carte-panel {
+  height: 550px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ===== MESSAGES ===== */
+
+.erreur {
+  color: #dc2626;
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 850px) {
+  .bornes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .liste-panel {
+    height: 350px;
+  }
+
+  .carte-panel {
+    height: 450px;
+  }
+
+  .recherche-input {
+    width: 100%;
+  }
+
+  .container {
+    padding: 20px 14px;
+  }
+}
+
+
+/* Filtre sélectionné */
+.filtre-btn.actif {
+  background: #168365;
+  color: white;
+  border-color: #168365;
+}
+
+.filtre-btn.actif:hover {
+  background: #116b52;
+  color: white;
+}
+
+/* Bouton réinitialiser */
+.reset-btn {
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.reset-btn:hover {
+  background: #e5e7eb;
+}
