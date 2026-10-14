@@ -18,6 +18,11 @@ export class Connexion {
   motDePasse = '';
   erreur = signal('');
   envoi = signal(false);
+  motDePasseVisible = signal(false);
+
+  basculerVisibilite(): void {
+    this.motDePasseVisible.update((v) => !v);
+  }
 
   seConnecter(): void {
     this.erreur.set('');

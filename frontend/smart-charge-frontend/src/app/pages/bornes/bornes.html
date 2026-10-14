@@ -1,6 +1,107 @@
-<section>
-  <h2>Bornes de recharge</h2>
 
+<main class="container">
+
+  <!-- En-tête de la page Bornes -->
+  <header class="header">
+    <h1>Trouver une borne</h1>
+    <p>Recherchez une borne de recharge près de chez vous.</p>
+  </header>
+
+  
+<!-- Barre de recherche et filtres -->
+<section class="recherche-section">
+
+  <div class="filtres">
+
+    <!-- Recherche par ville -->
+    <input
+      type="text"
+      class="recherche-input"
+      placeholder="Rechercher une ville..."
+      aria-label="Rechercher une ville"
+      [value]="rechercheVille()"
+      (input)="rechercheVille.set($any($event.target).value)"
+      (keyup.enter)="appliquerFiltres()"
+    />
+
+    <!-- Bouton de recherche -->
+    <button
+      type="button"
+      class="filtre-btn"
+      (click)="appliquerFiltres()">
+      🔍 Rechercher
+    </button>
+
+    <!-- Filtre puissance -->
+    <button
+      type="button"
+      class="filtre-btn"
+      [class.actif]="filtrePuissance()"
+      [attr.aria-pressed]="filtrePuissance()"
+      (click)="filtrePuissance.set(!filtrePuissance()); appliquerFiltres()">
+      50 kW et plus
+    </button>
+
+    <!-- Filtre Type 2 -->
+    <button
+      type="button"
+      class="filtre-btn"
+      [class.actif]="filtreConnecteur() === 'Type 2'"
+      [attr.aria-pressed]="filtreConnecteur() === 'Type 2'"
+      (click)="filtreConnecteur.set(filtreConnecteur() === 'Type 2' ? '' : 'Type 2'); appliquerFiltres()">
+      Type 2
+    </button>
+
+    <!-- Filtre CCS -->
+    <button
+      type="button"
+      class="filtre-btn"
+      [class.actif]="filtreConnecteur() === 'CCS'"
+      [attr.aria-pressed]="filtreConnecteur() === 'CCS'"
+      (click)="filtreConnecteur.set(filtreConnecteur() === 'CCS' ? '' : 'CCS'); appliquerFiltres()">
+      CCS
+    </button>
+
+    <!-- Réinitialisation -->
+    <button
+      type="button"
+      class="filtre-btn reset-btn"
+      (click)="reinitialiserFiltres()">
+      Réinitialiser
+    </button>
+
+  </div>
+
+</section>
+
+
+  <!-- Barre de recherche et filtres
+  <section class="recherche-section">
+
+    <div class="filtres">
+      <input
+        type="text"
+        placeholder="Ville ou adresse"
+        class="recherche-input"
+        aria-label="Rechercher une ville ou une adresse"
+      />
+
+      <button type="button" class="filtre-btn">
+        50 kW et plus
+      </button>
+
+      <button type="button" class="filtre-btn">
+        Type 2
+      </button>
+
+      <button type="button" class="filtre-btn">
+        CCS
+      </button>
+    </div>
+
+  </section> -->
+
+  <!-- Messages de chargement et d'erreur -->
   @if (chargement()) {
     <p>Chargement des bornes...</p>
   }
@@ -9,21 +110,51 @@
     <p class="erreur">{{ erreur() }}</p>
   }
 
-  @if (!chargement() && !erreur()) {
-    <p>{{ bornes().length }} bornes trouvées</p>
+  <!-- Liste à gauche + carte à droite -->
+  <section class="bornes-layout">
 
-    <div class="bornes-grid">
-      @for (borne of bornes(); track borne.id) {
-        <article class="borne-card">
-          <h3>🔌 {{ borne.nom }}</h3>
-          <p>📍 {{ borne.ville }}</p>
-          <p>{{ borne.adresse }}</p>
-          <p>⚡ Puissance : {{ borne.puissance }} kW</p>
-          <p>Connecteur : {{ borne.typeConnecteur }}</p>
-        </article>
-      } @empty {
-        <p>Aucune borne trouvée.</p>
-      }
+    <!-- Colonne gauche : liste des bornes -->
+    <div class="liste-panel">
+
+      <div class="liste-header">
+        <h2>Bornes de recharge</h2>
+        <span>{{ bornes().length }} bornes</span>
+      </div>
+
+      <div class="bornes-list">
+
+        @if (!chargement() && !erreur()) {
+          @for (borne of bornes(); track borne.id) {
+
+            <a class="borne-card" [routerLink]="['/reserver', borne.id]">
+
+              <h3>{{ borne.nom }}</h3>
+
+              <p class="borne-adresse">
+                {{ borne.adresse }}, {{ borne.ville }}
+              </p>
+
+              <div class="borne-infos">
+                <span>{{ borne.puissance }} kW</span>
+                <span>{{ borne.typeConnecteur }}</span>
+              </div>
+
+            </a>
+
+          } @empty {
+            <p>Aucune borne trouvée.</p>
+          }
+        }
+
+      </div>
+
     </div>
-  }
-</section>
+
+    <!-- Colonne droite : carte Leaflet -->
+    <div class="carte-panel">
+      <div id="map"></div>
+    </div>
+
+  </section>
+
+</main>
