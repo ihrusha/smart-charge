@@ -8,11 +8,20 @@
            placeholder="vous@exemple.fr" [(ngModel)]="email" />
 
     <label for="motDePasse">Mot de passe</label>
-    <input id="motDePasse" name="motDePasse" type="password" required
-           placeholder="12 caractères minimum" [(ngModel)]="motDePasse" />
+    <div class="champ-mot-de-passe">
+      <input id="motDePasse" name="motDePasse" required
+             placeholder="12 caractères minimum"
+             [type]="motDePasseVisible() ? 'text' : 'password'"
+             [(ngModel)]="motDePasse" />
+      <button type="button" class="bascule" (click)="basculerVisibilite()"
+              [attr.aria-label]="motDePasseVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+        {{ motDePasseVisible() ? '🙈' : '👁️' }}
+      </button>
+    </div>
 
     <label for="confirmation">Confirmer le mot de passe</label>
-    <input id="confirmation" name="confirmation" type="password" required
+    <input id="confirmation" name="confirmation" required
+           [type]="motDePasseVisible() ? 'text' : 'password'"
            [(ngModel)]="confirmation" />
 
     @if (erreur()) {
