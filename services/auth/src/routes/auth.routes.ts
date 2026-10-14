@@ -1,8 +1,8 @@
 import { Router } from "express";
 import argon2 from "argon2";
-import { db } from "../db";
+import { db } from "../db.js";
 import jwt from "jsonwebtoken";
-import { requireAuth } from "../middlewares/require-auth";
+import { requireAuth } from "../middlewares/require-auth.js";
 
 const router = Router();
 

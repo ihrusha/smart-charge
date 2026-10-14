@@ -25,10 +25,63 @@ services:
     environment:
       SPRING_MONGODB_URI: mongodb://reservations_app:${MONGO_RESERVATIONS_APP_PASSWORD}@mongo-reservations:27017/smartcharge_reservations
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans le fichier .env}
-      BORNES_URL: http://host.docker.internal:3001
+      BORNES_URL: http://bornes:3001
     depends_on:
       mongo-reservations:
         condition: service_healthy
+      bornes:
+        condition: service_started
+
+  bornes:
+    build: ./services/bornes
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      BORNES_MONGO_URI: "mongodb://bornes_app:${MONGO_BORNES_APP_PASSWORD}@mongo-bornes:27017/smartcharge_bornes?authSource=smartcharge_bornes"
+    depends_on:
+      mongo-bornes:
+        condition: service_healthy
+
+  auth:
+    build: ./services/auth
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: "postgres://users_app:${POSTGRES_USERS_PASSWORD}@postgres-users:5432/smartcharge_users"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans le fichier .env}
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+    command: ["sh", "-c", "npm run migrate -- up && npm start"]
+
+  bff:
+    build: ./bff
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_SERVICE_URL: http://auth:3003
+      RESERVATIONS_SERVICE_URL: http://reservations:3002
+      STATIONS_SERVICE_URL: http://bornes:3001
+    depends_on:
+      auth:
+        condition: service_started
+      reservations:
+        condition: service_started
+      bornes:
+        condition: service_started
+
+  frontend:
+    build: ./frontend/smart-charge-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    depends_on:
+      bff:
+        condition: service_started
 
   mongo-reservations:
     image: mongo:7
