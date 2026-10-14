@@ -1,0 +1,29 @@
+<section>
+  <h2>Bornes de recharge</h2>
+
+  @if (chargement()) {
+    <p>Chargement des bornes...</p>
+  }
+
+  @if (erreur()) {
+    <p class="erreur">{{ erreur() }}</p>
+  }
+
+  @if (!chargement() && !erreur()) {
+    <p>{{ bornes().length }} bornes trouvées</p>
+
+    <div class="bornes-grid">
+      @for (borne of bornes(); track borne.id) {
+        <article class="borne-card">
+          <h3>🔌 {{ borne.nom }}</h3>
+          <p>📍 {{ borne.ville }}</p>
+          <p>{{ borne.adresse }}</p>
+          <p>⚡ Puissance : {{ borne.puissance }} kW</p>
+          <p>Connecteur : {{ borne.typeConnecteur }}</p>
+        </article>
+      } @empty {
+        <p>Aucune borne trouvée.</p>
+      }
+    </div>
+  }
+</section>

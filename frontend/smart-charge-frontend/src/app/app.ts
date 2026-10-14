@@ -1,4 +1,3 @@
-
 import {
   Component,
   OnInit,
@@ -7,20 +6,23 @@ import {
   signal
 } from '@angular/core';
 
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import * as L from 'leaflet';
 
 import { Borne, BorneService } from './services/borne.service';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit, AfterViewInit {
 
-  private borneService = inject(BorneService);
+  private router = inject(Router);
+  protected auth = inject(AuthService);
+  protected borneService = inject(BorneService)
 
   bornes = signal<Borne[]>([]);
   chargement = signal(true);
@@ -59,5 +61,10 @@ export class App implements OnInit, AfterViewInit {
       }
     ).addTo(this.map);
 
+  }
+
+  seDeconnecter(): void {
+    this.auth.logout();
+    this.router.navigate(['/connexion']);
   }
 }
