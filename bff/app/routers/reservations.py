@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 import httpx
-from fastapi import APIRouter, HTTPException, Path, Request
+from fastapi import APIRouter, HTTPException, Path, Query, Request
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
@@ -58,6 +58,15 @@ async def forward_to_reservations_service(
 async def list_reservations(request: Request):
     return await forward_to_reservations_service(request, "GET")
 
+@router.get("/disponibilites")
+async def get_disponibilites(
+    request: Request,
+    borne_id: str = Query(alias="borneId"),
+    date: str = Query(pattern=r"^\d{4}-\d{2}-\d{2}$"),
+):
+    return await forward_to_reservations_service(
+        request, "GET", f"/disponibilites?borneId={borne_id}&date={date}"
+    )
 
 @router.get("/{reservation_id}")
 async def get_reservation(request: Request, reservation_id: ReservationId):

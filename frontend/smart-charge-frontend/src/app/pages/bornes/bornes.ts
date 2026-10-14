@@ -2,9 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 
 import { Borne, BorneService } from '../../services/borne.service';
 
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'app-bornes',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './bornes.html',
 })
 export class Bornes implements OnInit {

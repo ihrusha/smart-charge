@@ -386,6 +386,49 @@ class ReservationApiTest {
                 "En-tête Authorization non transmis : " + transmis);
     }
 
+    // ---------- Disponibilités ----------
+
+    @Test
+    void disponibilites_listeLesCreneauxDeLaJournee() throws Exception {
+        HttpResponse<String> r = envoyer("GET",
+                "/api/reservations/disponibilites?borneId=" + BORNE_1 + "&date=" + date, USER_1, null);
+
+        assertEquals(200, r.statusCode());
+        // 8h00 à 19h30 par pas de 30 minutes = 24 créneaux
+        assertEquals(24, r.body().split("\"heureDebut\"", -1).length - 1);
+        assertTrue(r.body().contains("\"dureeMinutes\":30"));
+    }
+
+    @Test
+    void disponibilites_marqueLeCreneauPrisSurLaBorne() throws Exception {
+        assertEquals(201, reserver(USER_2, BORNE_1, date, "14:00:00").statusCode());
+
+        HttpResponse<String> r = envoyer("GET",
+                "/api/reservations/disponibilites?borneId=" + BORNE_1 + "&date=" + date, USER_1, null);
+
+        assertEquals(200, r.statusCode());
+        assertTrue(r.body().contains("BORNE_OCCUPEE"));
+    }
+
+    @Test
+    void disponibilites_marqueLeCreneauOuLUtilisateurEstDejaPris() throws Exception {
+        // L'utilisateur réserve une AUTRE borne sur ce créneau
+        assertEquals(201, reserver(USER_1, BORNE_2, date, "14:00:00").statusCode());
+
+        HttpResponse<String> r = envoyer("GET",
+                "/api/reservations/disponibilites?borneId=" + BORNE_1 + "&date=" + date, USER_1, null);
+
+        assertEquals(200, r.statusCode());
+        assertTrue(r.body().contains("DEJA_RESERVE"));
+    }
+
+    @Test
+    void disponibilites_borneIdInvalide_renvoie400() throws Exception {
+        HttpResponse<String> r = envoyer("GET",
+                "/api/reservations/disponibilites?borneId=borne-1&date=" + date, USER_1, null);
+        assertEquals(400, r.statusCode());
+    }
+
     // ---------- Isolation entre utilisateurs ----------
 
     @Test
