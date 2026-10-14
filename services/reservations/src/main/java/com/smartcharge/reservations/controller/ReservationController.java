@@ -43,8 +43,7 @@ public class ReservationController {
     private static final ZoneId ZONE = ZoneId.of("Europe/Paris");
     // Identifiant MongoDB (ObjectId) : 24 caractères hexadécimaux
     private static final Pattern OBJECT_ID = Pattern.compile("^[a-fA-F0-9]{24}$");
-    private static final LocalTime OUVERTURE = LocalTime.of(8, 0);
-    private static final LocalTime FERMETURE = LocalTime.of(20, 0);
+    private static final LocalTime OUVERTURE = LocalTime.MIDNIGHT;
     private static final Duration DUREE_CRENEAU = Duration.ofMinutes(30);
 
     public record CreateReservationRequest(String borneId, LocalDate date, LocalTime heureDebut) {}
@@ -90,9 +89,8 @@ public class ReservationController {
         LocalDateTime maintenant = LocalDateTime.now(ZONE);
         List<Creneau> creneaux = new ArrayList<>();
 
-        for (LocalTime heure = OUVERTURE; heure.isBefore(FERMETURE);
-             heure = heure.plus(DUREE_CRENEAU)) {
-
+        LocalTime heure = OUVERTURE;
+        do {
             String motif = null;
             if (!LocalDateTime.of(date, heure).isAfter(maintenant)) {
                 motif = "PASSE";
@@ -103,7 +101,8 @@ public class ReservationController {
             }
 
             creneaux.add(new Creneau(heure.toString(), motif == null, motif));
-        }
+            heure = heure.plus(DUREE_CRENEAU);
+        } while (!heure.equals(OUVERTURE));
 
         return ResponseEntity.ok(Map.of(
                 "borneId", borne,

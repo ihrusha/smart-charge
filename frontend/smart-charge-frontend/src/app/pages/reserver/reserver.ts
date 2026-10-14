@@ -42,9 +42,15 @@ export class Reserver implements OnInit {
     this.jours.set(dates);
     this.jourChoisi.set(dates[0]);
 
-    this.borneService.getBorne(this.borneId).subscribe({
-      next: (b) => this.borne.set(b),
-      error: () => this.erreur.set('Borne introuvable.'),
+        // Le BFF n'expose pas encore GET /api/bornes/{id} : on cherche dans la liste
+    this.borneService.getBornes().subscribe({
+      next: (liste) => {
+        const trouvee = liste.find((b) => b.id === this.borneId);
+        if (trouvee) {
+          this.borne.set(trouvee);
+        }
+      },
+      error: () => {},
     });
 
     this.chargerCreneaux();
