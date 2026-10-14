@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.routers.bornes import router as bornes_router
 
 settings = get_settings()
 
@@ -18,3 +19,5 @@ app.add_middleware(
 @app.get("/health", tags=["infra"])
 async def health():
     return {"status": "ok", "service": "bff"}
+
+app.include_router(bornes_router)
