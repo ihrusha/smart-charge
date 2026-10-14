@@ -25,10 +25,11 @@ services:
     environment:
       SPRING_MONGODB_URI: mongodb://reservations_app:${MONGO_RESERVATIONS_APP_PASSWORD}@mongo-reservations:27017/smartcharge_reservations
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans le fichier .env}
+      BORNES_URL: http://host.docker.internal:3001
     depends_on:
       mongo-reservations:
         condition: service_healthy
-        
+
   mongo-reservations:
     image: mongo:7
     restart: unless-stopped

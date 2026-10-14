@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -17,10 +19,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.smartcharge.reservations.client.BorneClient;
 import com.smartcharge.reservations.model.Reservation;
 import com.smartcharge.reservations.model.Statut;
 import com.smartcharge.reservations.repository.ReservationRepository;
@@ -30,14 +34,17 @@ import com.smartcharge.reservations.repository.ReservationRepository;
 public class ReservationController {
 
     private static final ZoneId ZONE = ZoneId.of("Europe/Paris");
-    private static final int BORNE_ID_MAX = 50;
+    // Identifiant MongoDB (ObjectId) : 24 caractères hexadécimaux
+    private static final Pattern OBJECT_ID = Pattern.compile("^[a-fA-F0-9]{24}$");
 
     public record CreateReservationRequest(String borneId, LocalDate date, LocalTime heureDebut) {}
 
     private final ReservationRepository repository;
+    private final BorneClient borneClient;
 
-    public ReservationController(ReservationRepository repository) {
+    public ReservationController(ReservationRepository repository, BorneClient borneClient) {
         this.repository = repository;
+        this.borneClient = borneClient;
     }
 
     @GetMapping
@@ -53,14 +60,28 @@ public class ReservationController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateReservationRequest body,
-                                    @RequestAttribute("userId") String userId) {
+                                    @RequestAttribute("userId") String userId,
+                                    @RequestHeader("Authorization") String authorization) {
         String erreur = valider(body);
         if (erreur != null) {
             return ResponseEntity.badRequest().body(Map.of("error", erreur));
         }
 
+        // Minuscules : sinon "ABC..." et "abc..." contourneraient les index uniques
+        String borneId = body.borneId().trim().toLowerCase(Locale.ROOT);
+
+        BorneClient.Resultat borne = borneClient.verifier(borneId, authorization);
+        if (borne == BorneClient.Resultat.INTROUVABLE) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Borne introuvable"));
+        }
+        if (borne == BorneClient.Resultat.INDISPONIBLE) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "Service bornes indisponible, réessayez plus tard"));
+        }
+
         Reservation r = new Reservation();
-        r.setBorneId(body.borneId().trim());
+        r.setBorneId(borneId);
         r.setUserId(userId);
         r.setDate(body.date());
         r.setHeureDebut(body.heureDebut());
@@ -89,8 +110,8 @@ public class ReservationController {
                 || body.date() == null || body.heureDebut() == null) {
             return "borneId, date et heureDebut sont obligatoires";
         }
-        if (body.borneId().trim().length() > BORNE_ID_MAX) {
-            return "borneId trop long (" + BORNE_ID_MAX + " caractères maximum)";
+        if (!OBJECT_ID.matcher(body.borneId().trim()).matches()) {
+            return "borneId invalide : identifiant de borne attendu (24 caractères hexadécimaux)";
         }
         int minute = body.heureDebut().getMinute();
         if ((minute != 0 && minute != 30)

@@ -3,6 +3,9 @@ package com.smartcharge.reservations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -10,6 +13,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,12 +37,14 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.smartcharge.reservations.repository.ReservationRepository;
+import com.sun.net.httpserver.HttpServer;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.data.mongodb.auto-index-creation=true",
-            "jwt.secret=" + ReservationApiTest.SECRET
+            "jwt.secret=" + ReservationApiTest.SECRET,
+            "bornes.timeout-ms=500"
         })
 class ReservationApiTest {
 
@@ -48,6 +56,54 @@ class ReservationApiTest {
     static final String USER_1 = "11111111-1111-1111-1111-111111111111";
     static final String USER_2 = "22222222-2222-2222-2222-222222222222";
 
+    // Identifiants de bornes (ObjectId : 24 caractères hexadécimaux)
+    static final String BORNE_1 = "650000000000000000000001";
+    static final String BORNE_2 = "650000000000000000000002";
+    static final String BORNE_3 = "650000000000000000000003";
+    static final String BORNE_ABC = "65abcdef0123456789abcdef";
+    static final String BORNE_INCONNUE = "650000000000000000000404";
+    static final String BORNE_EN_PANNE = "650000000000000000000500";
+    static final String BORNE_LENTE = "650000000000000000000998";
+
+    static final Set<String> BORNES_CONNUES = Set.of(BORNE_1, BORNE_2, BORNE_3, BORNE_ABC);
+    static final AtomicReference<String> DERNIERE_AUTH = new AtomicReference<>();
+
+    // Faux service bornes : 200 si connue, 500 si en panne, réponse lente, 404 sinon
+    static final HttpServer BORNES = demarrerFauxServiceBornes();
+
+    static HttpServer demarrerFauxServiceBornes() {
+        try {
+            HttpServer serveur = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+            serveur.setExecutor(Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            }));
+            serveur.createContext("/bornes/", exchange -> {
+                DERNIERE_AUTH.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                String id = exchange.getRequestURI().getPath().substring("/bornes/".length());
+                if (BORNE_LENTE.equals(id)) {
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                int code = BORNES_CONNUES.contains(id) ? 200 : BORNE_EN_PANNE.equals(id) ? 500 : 404;
+                byte[] corps = ("{\"id\":\"" + id + "\"}").getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(code, corps.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(corps);
+                }
+            });
+            serveur.start();
+            return serveur;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     // MongoDB jetable (même version majeure que ton MongoDB local : 7.0)
     static final GenericContainer<?> MONGO = new GenericContainer<>("mongo:7.0")
             .withExposedPorts(27017)
@@ -58,11 +114,12 @@ class ReservationApiTest {
     }
 
     @DynamicPropertySource
-    static void mongoProperties(DynamicPropertyRegistry registry) {
+    static void proprietes(DynamicPropertyRegistry registry) {
         String uri = "mongodb://" + MONGO.getHost() + ":" + MONGO.getMappedPort(27017)
                 + "/smartcharge_test";
         registry.add("spring.mongodb.uri", () -> uri);
         registry.add("spring.data.mongodb.uri", () -> uri);
+        registry.add("bornes.url", () -> "http://127.0.0.1:" + BORNES.getAddress().getPort());
     }
 
     @Value("${local.server.port}")
@@ -83,6 +140,7 @@ class ReservationApiTest {
         assertEquals("smartcharge_test", mongoTemplate.getDb().getName(),
                 "Les tests ne sont pas branchés sur la base de test, arrêt avant suppression");
         repository.deleteAll();
+        DERNIERE_AUTH.set(null);
     }
 
     // ---------- Outils ----------
@@ -216,7 +274,7 @@ class ReservationApiTest {
 
     @Test
     void creationValide_renvoie201() throws Exception {
-        HttpResponse<String> r = reserver(USER_1, "borne-1", date, "14:00:00");
+        HttpResponse<String> r = reserver(USER_1, BORNE_1, date, "14:00:00");
         assertEquals(201, r.statusCode());
         assertTrue(r.body().contains("\"statut\":\"CONFIRMEE\""));
         assertTrue(r.body().contains("\"userId\":\"" + USER_1 + "\""));
@@ -224,67 +282,119 @@ class ReservationApiTest {
 
     @Test
     void doublon_memeUtilisateur_memeBorne_renvoie409() throws Exception {
-        assertEquals(201, reserver(USER_1, "borne-1", date, "14:00:00").statusCode());
-        HttpResponse<String> r = reserver(USER_1, "borne-1", date, "14:00:00");
+        assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
+        HttpResponse<String> r = reserver(USER_1, BORNE_1, date, "14:00:00");
         assertEquals(409, r.statusCode());
         assertTrue(r.body().contains("déjà réservé"));
     }
 
     @Test
     void memeBorneMemeCreneau_autreUtilisateur_renvoie409() throws Exception {
-        assertEquals(201, reserver(USER_1, "borne-1", date, "14:00:00").statusCode());
-        assertEquals(409, reserver(USER_2, "borne-1", date, "14:00:00").statusCode());
+        assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
+        assertEquals(409, reserver(USER_2, BORNE_1, date, "14:00:00").statusCode());
     }
 
     @Test
     void memeUtilisateurMemeCreneau_autreBorne_renvoie409() throws Exception {
-        assertEquals(201, reserver(USER_1, "borne-1", date, "14:00:00").statusCode());
-        assertEquals(409, reserver(USER_1, "borne-2", date, "14:00:00").statusCode());
+        assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
+        assertEquals(409, reserver(USER_1, BORNE_2, date, "14:00:00").statusCode());
     }
 
     @Test
     void creneauxConsecutifs_nSeBloquentPas() throws Exception {
-        assertEquals(201, reserver(USER_1, "borne-3", date, "14:30:00").statusCode());
-        assertEquals(201, reserver(USER_2, "borne-3", date, "15:00:00").statusCode());
+        assertEquals(201, reserver(USER_1, BORNE_3, date, "14:30:00").statusCode());
+        assertEquals(201, reserver(USER_2, BORNE_3, date, "15:00:00").statusCode());
     }
 
     // ---------- Validation ----------
 
     @Test
     void datePassee_renvoie400() throws Exception {
-        HttpResponse<String> r = reserver(USER_1, "borne-1", "2020-01-01", "14:00:00");
+        HttpResponse<String> r = reserver(USER_1, BORNE_1, "2020-01-01", "14:00:00");
         assertEquals(400, r.statusCode());
         assertTrue(r.body().contains("futur"));
     }
 
     @Test
     void heureHorsCreneau_renvoie400() throws Exception {
-        HttpResponse<String> r = reserver(USER_1, "borne-1", date, "14:15:00");
+        HttpResponse<String> r = reserver(USER_1, BORNE_1, date, "14:15:00");
         assertEquals(400, r.statusCode());
         assertTrue(r.body().contains(":00 ou :30"));
     }
 
     @Test
     void champsManquants_renvoie400() throws Exception {
-        HttpResponse<String> r = envoyer("POST", "/api/reservations", USER_1, "{\"borneId\":\"borne-1\"}");
+        HttpResponse<String> r = envoyer("POST", "/api/reservations", USER_1,
+                "{\"borneId\":\"" + BORNE_1 + "\"}");
         assertEquals(400, r.statusCode());
     }
 
     @Test
     void dateMalFormee_renvoie400() throws Exception {
-        HttpResponse<String> r = reserver(USER_1, "borne-1", "demain", "14:00:00");
+        HttpResponse<String> r = reserver(USER_1, BORNE_1, "demain", "14:00:00");
         assertEquals(400, r.statusCode());
+    }
+
+    @Test
+    void borneIdInvalide_renvoie400() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, "borne-1", date, "14:00:00");
+        assertEquals(400, r.statusCode());
+        assertTrue(r.body().contains("borneId invalide"));
+    }
+
+    // ---------- Vérification de la borne ----------
+
+    @Test
+    void borneInconnue_renvoie404_etRienNEstEnregistre() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, BORNE_INCONNUE, date, "14:00:00");
+        assertEquals(404, r.statusCode());
+        assertTrue(r.body().contains("Borne introuvable"));
+
+        assertEquals("[]", envoyer("GET", "/api/reservations", USER_1, null).body());
+    }
+
+    @Test
+    void serviceBornesEnPanne_renvoie503() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, BORNE_EN_PANNE, date, "14:00:00");
+        assertEquals(503, r.statusCode());
+        assertTrue(r.body().contains("indisponible"));
+        assertEquals("[]", envoyer("GET", "/api/reservations", USER_1, null).body());
+    }
+
+    @Test
+    void serviceBornesTropLent_renvoie503() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, BORNE_LENTE, date, "14:00:00");
+        assertEquals(503, r.statusCode());
+        assertEquals("[]", envoyer("GET", "/api/reservations", USER_1, null).body());
+    }
+
+    @Test
+    void borneIdEnMajuscules_estNormaliseEnMinuscules() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, BORNE_ABC.toUpperCase(), date, "14:00:00");
+        assertEquals(201, r.statusCode());
+        assertTrue(r.body().contains("\"borneId\":\"" + BORNE_ABC + "\""));
+
+        // La même borne écrite en minuscules doit entrer en conflit (index unique)
+        assertEquals(409, reserver(USER_2, BORNE_ABC, date, "14:00:00").statusCode());
+    }
+
+    @Test
+    void leTokenDeLUtilisateurEstTransmisAuServiceBornes() throws Exception {
+        assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
+        String transmis = DERNIERE_AUTH.get();
+        assertTrue(transmis != null && transmis.startsWith("Bearer "),
+                "En-tête Authorization non transmis : " + transmis);
     }
 
     // ---------- Isolation entre utilisateurs ----------
 
     @Test
     void unUtilisateurNeVoitQueSesReservations() throws Exception {
-        reserver(USER_1, "borne-1", date, "14:00:00");
+        reserver(USER_1, BORNE_1, date, "14:00:00");
 
         HttpResponse<String> liste1 = envoyer("GET", "/api/reservations", USER_1, null);
         assertEquals(200, liste1.statusCode());
-        assertTrue(liste1.body().contains("borne-1"));
+        assertTrue(liste1.body().contains(BORNE_1));
 
         HttpResponse<String> liste2 = envoyer("GET", "/api/reservations", USER_2, null);
         assertEquals(200, liste2.statusCode());
@@ -293,7 +403,7 @@ class ReservationApiTest {
 
     @Test
     void consulterLaReservationDUnAutre_renvoie404() throws Exception {
-        String id = extraireId(reserver(USER_1, "borne-1", date, "14:00:00").body());
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
 
         assertEquals(200, envoyer("GET", "/api/reservations/" + id, USER_1, null).statusCode());
         assertEquals(404, envoyer("GET", "/api/reservations/" + id, USER_2, null).statusCode());
@@ -303,7 +413,7 @@ class ReservationApiTest {
 
     @Test
     void annulation_changeLeStatut() throws Exception {
-        String id = extraireId(reserver(USER_1, "borne-1", date, "14:00:00").body());
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
 
         HttpResponse<String> r = envoyer("PATCH", "/api/reservations/" + id + "/annulation", USER_1, null);
         assertEquals(200, r.statusCode());
@@ -312,7 +422,7 @@ class ReservationApiTest {
 
     @Test
     void annulerLaReservationDUnAutre_renvoie404() throws Exception {
-        String id = extraireId(reserver(USER_1, "borne-1", date, "14:00:00").body());
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
 
         HttpResponse<String> r = envoyer("PATCH", "/api/reservations/" + id + "/annulation", USER_2, null);
         assertEquals(404, r.statusCode());
@@ -324,10 +434,10 @@ class ReservationApiTest {
 
     @Test
     void apresAnnulation_leCreneauEstLibere() throws Exception {
-        String id = extraireId(reserver(USER_1, "borne-1", date, "14:00:00").body());
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
         envoyer("PATCH", "/api/reservations/" + id + "/annulation", USER_1, null);
 
         // Les index uniques ne s'appliquent qu'aux réservations CONFIRMEE
-        assertEquals(201, reserver(USER_1, "borne-1", date, "14:00:00").statusCode());
+        assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
     }
 }
