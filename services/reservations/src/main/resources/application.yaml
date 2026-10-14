@@ -1,17 +1,21 @@
 server:
   port: 3002
+  
 
 spring:
   application:
     name: reservations
   mongodb:
-    uri: mongodb://localhost:27017/reservations
+    uri: mongodb://reservations_app:${MONGO_RESERVATIONS_APP_PASSWORD}@localhost:27018/smartcharge_reservations?authSource=smartcharge_reservations
   data:
     mongodb:
       auto-index-creation: true
 
 bornes:
   url: http://localhost:3001
+
+jwt:
+  secret: ${JWT_SECRET:change_me_avec_une_longue_chaine_aleatoire}
 
 management:
   endpoints:
