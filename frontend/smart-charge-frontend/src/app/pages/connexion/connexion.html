@@ -8,8 +8,15 @@
            placeholder="vous@exemple.fr" [(ngModel)]="email" />
 
     <label for="motDePasse">Mot de passe</label>
-    <input id="motDePasse" name="motDePasse" type="password" required
-           [(ngModel)]="motDePasse" />
+    <div class="champ-mot-de-passe">
+      <input id="motDePasse" name="motDePasse" required
+             [type]="motDePasseVisible() ? 'text' : 'password'"
+             [(ngModel)]="motDePasse" />
+      <button type="button" class="bascule" (click)="basculerVisibilite()"
+              [attr.aria-label]="motDePasseVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+        {{ motDePasseVisible() ? '🙈' : '👁️' }}
+      </button>
+    </div>
 
     @if (erreur()) {
       <p class="erreur">{{ erreur() }}</p>

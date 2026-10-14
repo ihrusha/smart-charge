@@ -19,6 +19,11 @@ export class Inscription {
   confirmation = '';
   erreur = signal('');
   envoi = signal(false);
+  motDePasseVisible = signal(false);
+
+  basculerVisibilite(): void {
+    this.motDePasseVisible.update((v) => !v);
+  }
 
   creerLeCompte(): void {
     this.erreur.set('');

@@ -126,7 +126,7 @@
         @if (!chargement() && !erreur()) {
           @for (borne of bornes(); track borne.id) {
 
-            <article class="borne-card">
+            <a class="borne-card" [routerLink]="['/reserver', borne.id]">
 
               <h3>{{ borne.nom }}</h3>
 
@@ -139,7 +139,7 @@
                 <span>{{ borne.typeConnecteur }}</span>
               </div>
 
-            </article>
+            </a>
 
           } @empty {
             <p>Aucune borne trouvée.</p>

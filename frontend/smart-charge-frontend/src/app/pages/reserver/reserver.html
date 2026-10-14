@@ -1,0 +1,67 @@
+<section>
+  <a class="retour" routerLink="/bornes">‹ Retour aux bornes</a>
+
+  @if (borne(); as b) {
+    <h2>{{ b.nom }}</h2>
+    <p>{{ b.adresse }} · {{ b.ville }}</p>
+    <p>⚡ {{ b.puissance }} kW · Connecteur : {{ b.typeConnecteur }}</p>
+  }
+
+  <h3>Choisir un créneau</h3>
+
+  <div class="jours">
+    @for (j of jours(); track j) {
+      <button type="button"
+              [class.actif]="jourChoisi() === j"
+              (click)="choisirJour(j)">{{ libelleJour(j) }}</button>
+    }
+  </div>
+
+  @if (chargement()) {
+    <p>Chargement des créneaux...</p>
+  }
+
+  @if (erreur()) {
+    <p class="erreur">{{ erreur() }}</p>
+  }
+
+  @if (succes()) {
+    <p class="succes">
+      {{ succes() }}
+      <button type="button" class="lien-succes" (click)="versMesReservations()">
+        Voir mes réservations
+      </button>
+    </p>
+  }
+
+  @if (!chargement()) {
+    <div class="creneaux">
+      @for (c of creneaux(); track c.heureDebut) {
+        <button type="button"
+                class="creneau"
+                [class.indisponible]="!c.disponible"
+                [class.choisi]="creneauChoisi() === c.heureDebut"
+                [disabled]="!c.disponible"
+                [title]="infobulle(c)"
+                (click)="choisirCreneau(c)">
+          {{ libelleCreneau(c.heureDebut) }}
+        </button>
+      }
+    </div>
+
+    <p class="aide">Créneaux de 30 minutes, de 8h à 20h, sur 7 jours.</p>
+
+    @if (creneauChoisi()) {
+      <div class="recap">
+        <h4>Votre réservation</h4>
+        <p>{{ borne()?.nom }}</p>
+        <p>{{ libelleJour(jourChoisi()) }} · {{ libelleCreneau(creneauChoisi()!) }}</p>
+        <button type="button" class="bouton-principal"
+                [disabled]="envoi()"
+                (click)="reserver()">
+          {{ envoi() ? 'Réservation...' : 'Réserver ce créneau' }}
+        </button>
+      </div>
+    }
+  }
+</section>

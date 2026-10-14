@@ -45,4 +45,8 @@ export class BorneService {
 
     return this.http.get<Borne[]>(this.apiUrl, { params });
   }
+
+    getBorne(id: string): Observable<Borne> {
+    return this.http.get<Borne>(`${this.apiUrl}/${id}`);
+  }
 }

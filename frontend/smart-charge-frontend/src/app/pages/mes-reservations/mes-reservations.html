@@ -1,0 +1,51 @@
+<section>
+  <h2>Mes réservations</h2>
+
+  <div class="onglets">
+    <button type="button"
+            [class.actif]="onglet() === 'avenir'"
+            (click)="changerOnglet('avenir')">À venir</button>
+    <button type="button"
+            [class.actif]="onglet() === 'passees'"
+            (click)="changerOnglet('passees')">Passées</button>
+  </div>
+
+  @if (chargement()) {
+    <p>Chargement de vos réservations...</p>
+  }
+
+  @if (erreur()) {
+    <p class="erreur">{{ erreur() }}</p>
+  }
+
+  @if (!chargement()) {
+    <div class="bornes-grid">
+      @for (r of reservationsAffichees(); track r.id) {
+        <article class="borne-card">
+          <div class="ligne-titre">
+            <h3>{{ nomBorne(r.borneId) }}</h3>
+            <span class="badge" [class.annulee]="r.statut === 'ANNULEE'">
+              {{ r.statut === 'CONFIRMEE' ? 'Confirmée' : 'Annulée' }}
+            </span>
+          </div>
+
+          <p>{{ creneau(r) }}</p>
+
+          @if (r.statut === 'CONFIRMEE' && onglet() === 'avenir') {
+            <button type="button" class="bouton-secondaire"
+                    [disabled]="annulationEnCours() === r.id"
+                    (click)="annuler(r)">
+              {{ annulationEnCours() === r.id ? 'Annulation...' : 'Annuler la réservation' }}
+            </button>
+          }
+        </article>
+      } @empty {
+        <p>
+          {{ onglet() === 'avenir'
+             ? "Vous n'avez aucune réservation à venir."
+             : "Vous n'avez aucune réservation passée." }}
+        </p>
+      }
+    </div>
+  }
+</section>
