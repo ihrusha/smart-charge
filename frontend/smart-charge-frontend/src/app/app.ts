@@ -1,6 +1,14 @@
 
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  inject,
+  signal
+} from '@angular/core';
+
 import { RouterOutlet } from '@angular/router';
+import * as L from 'leaflet';
 
 import { Borne, BorneService } from './services/borne.service';
 
@@ -10,13 +18,15 @@ import { Borne, BorneService } from './services/borne.service';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
+export class App implements OnInit, AfterViewInit {
 
   private borneService = inject(BorneService);
 
   bornes = signal<Borne[]>([]);
   chargement = signal(true);
   erreur = signal('');
+
+  private map!: L.Map;
 
   ngOnInit(): void {
     this.borneService.getBornes().subscribe({
@@ -31,5 +41,23 @@ export class App implements OnInit {
         this.chargement.set(false);
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    this.initialiserCarte();
+  }
+
+  private initialiserCarte(): void {
+
+    this.map = L.map('map').setView([48.8566, 2.3522], 11);
+
+    L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }
+    ).addTo(this.map);
+
   }
 }

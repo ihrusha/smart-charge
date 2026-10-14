@@ -36,3 +36,16 @@ header h1 {
 .erreur {
   color: red;
 }
+
+
+.carte-section {
+  margin-top: 40px;
+}
+
+#map {
+  height: 450px;
+  width: 100%;
+  margin-top: 20px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
