@@ -1,39 +1,14 @@
+<header class="barre">
+  <a class="logo" routerLink="/">⚡ Smart Charge</a>
+
+  @if (auth.estConnecte()) {
+    <nav>
+      <a routerLink="/bornes" routerLinkActive="actif">Bornes</a>
+    </nav>
+    <button type="button" class="lien" (click)="seDeconnecter()">Se déconnecter</button>
+  }
+</header>
 
 <main class="container">
-
-  <header>
-    <h1>⚡ Smart Charge</h1>
-    <p>Trouvez une borne de recharge pour votre véhicule électrique</p>
-  </header>
-
-  <section>
-    <h2>Bornes de recharge</h2>
-
-    @if (chargement()) {
-      <p>Chargement des bornes...</p>
-    }
-
-    @if (erreur()) {
-      <p class="erreur">{{ erreur() }}</p>
-    }
-
-    @if (!chargement() && !erreur()) {
-      <p>{{ bornes().length }} bornes trouvées</p>
-
-      <div class="bornes-grid">
-        @for (borne of bornes(); track borne.id) {
-          <article class="borne-card">
-            <h3>🔌 {{ borne.nom }}</h3>
-            <p>📍 {{ borne.ville }}</p>
-            <p>{{ borne.adresse }}</p>
-            <p>⚡ Puissance : {{ borne.puissance }} kW</p>
-            <p>Connecteur : {{ borne.typeConnecteur }}</p>
-          </article>
-        } @empty {
-          <p>Aucune borne trouvée.</p>
-        }
-      </div>
-    }
-  </section>
-
+  <router-outlet />
 </main>

@@ -1,3 +1,14 @@
 import { Routes } from '@angular/router';
 
-export const routes: Routes = [];
+import { authGuard } from './guards/auth.guard';
+import { Bornes } from './pages/bornes/bornes';
+import { Connexion } from './pages/connexion/connexion';
+import { Inscription } from './pages/inscription/inscription';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'bornes', pathMatch: 'full' },
+  { path: 'connexion', component: Connexion },
+  { path: 'inscription', component: Inscription },
+  { path: 'bornes', component: Bornes, canActivate: [authGuard] },
+  { path: '**', redirectTo: 'bornes' },
+];
