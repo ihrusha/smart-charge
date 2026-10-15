@@ -5,13 +5,14 @@ import {
   AfterViewInit,
   OnDestroy,
   inject,
-  signal
+  signal,
+  computed
 } from '@angular/core';
 
 import * as L from 'leaflet';
 
 import { Borne, BorneService } from '../../services/borne.service';
-
+import { AuthService } from '../../services/auth.service';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -23,47 +24,110 @@ import { RouterLink } from '@angular/router';
 export class Bornes implements OnInit, AfterViewInit, OnDestroy {
 
   private borneService = inject(BorneService);
+  private authService = inject(AuthService);
 
-  // Données récupérées depuis le BFF
+  // ===== DONNÉES DES BORNES =====
+
   bornes = signal<Borne[]>([]);
   chargement = signal(true);
   erreur = signal('');
 
-  
-// Liste des identifiants des bornes favorites
-favoris = signal<string[]>([]);
+  // ===== FAVORIS =====
 
-// Ajouter ou retirer une borne des favoris
-toggleFavori(id: string): void {
-  this.favoris.update(liste =>
-    liste.includes(id)
-      ? liste.filter(favoriId => favoriId !== id)
-      : [...liste, id]
-  );
-}
+  favoris = signal<string[]>([]);
 
-// Vérifier si une borne est favorite
-estFavori(id: string): boolean {
-  return this.favoris().includes(id);
-}
+  // Clé propre à chaque compte utilisateur
+  private cleFavoris: string | null = null;
 
-  
-  // Filtres sélectionnés
+  // Charger les favoris enregistrés dans le navigateur
+  chargerFavoris(): void {
+    this.authService.me().subscribe({
+      next: (reponse) => {
+        this.cleFavoris =
+          `smartcharge_favoris_${reponse.user.id}`;
+
+        const sauvegarde = localStorage.getItem(
+          this.cleFavoris
+        );
+
+        try {
+          const donnees = sauvegarde
+            ? JSON.parse(sauvegarde)
+            : [];
+
+          this.favoris.set(
+            Array.isArray(donnees)
+              ? donnees.filter(
+                  (id): id is string => typeof id === 'string'
+                )
+              : []
+          );
+        } catch (err) {
+          console.error('Favoris enregistrés invalides :', err);
+          this.favoris.set([]);
+        }
+      },
+
+      error: (err) => {
+        console.error('Erreur chargement favoris :', err);
+        this.cleFavoris = null;
+        this.favoris.set([]);
+      }
+    });
+  }
+
+  // Ajouter ou retirer une borne des favoris
+  toggleFavori(id: string): void {
+    if (!this.cleFavoris) {
+      console.warn('Connecte-toi pour enregistrer des favoris.');
+      return;
+    }
+
+    this.favoris.update(liste =>
+      liste.includes(id)
+        ? liste.filter(favoriId => favoriId !== id)
+        : [...liste, id]
+    );
+
+    localStorage.setItem(
+      this.cleFavoris,
+      JSON.stringify(this.favoris())
+    );
+  }
+
+  // Vérifier si une borne est favorite
+  estFavori(id: string): boolean {
+    return this.favoris().includes(id);
+  }
+
+  // Afficher les favoris en haut de la liste
+  bornesTriees = computed(() => {
+    const favoris = this.favoris();
+
+    return [...this.bornes()].sort((a, b) => {
+      const aFavori = favoris.includes(a.id);
+      const bFavori = favoris.includes(b.id);
+
+      return Number(bFavori) - Number(aFavori);
+    });
+  });
+
+  // ===== FILTRES =====
+
   rechercheVille = signal('');
   filtrePuissance = signal(false);
   filtreConnecteur = signal('');
 
-    // Simulation : une borne hors service
-  private borneHorsServiceId: string | null = null;
-
-  // Appliquer les filtres
   appliquerFiltres(): void {
     this.chargement.set(true);
     this.erreur.set('');
 
     const ville = this.rechercheVille().trim() || undefined;
-    const puissanceMin = this.filtrePuissance() ? 50 : undefined;
-    const typeConnecteur = this.filtreConnecteur() || undefined;
+    const puissanceMin = this.filtrePuissance()
+      ? 50
+      : undefined;
+    const typeConnecteur =
+      this.filtreConnecteur() || undefined;
 
     this.borneService.getBornes(
       ville,
@@ -75,6 +139,7 @@ estFavori(id: string): boolean {
         this.chargement.set(false);
         this.afficherBornesSurCarte(data);
       },
+
       error: (err) => {
         console.error('Erreur de filtrage :', err);
         this.erreur.set('Impossible de filtrer les bornes.');
@@ -83,7 +148,6 @@ estFavori(id: string): boolean {
     });
   }
 
-  // Réinitialiser les filtres
   reinitialiserFiltres(): void {
     this.rechercheVille.set('');
     this.filtrePuissance.set(false);
@@ -91,45 +155,65 @@ estFavori(id: string): boolean {
     this.appliquerFiltres();
   }
 
+  // ===== STATUT DES BORNES =====
 
+  // Simulation : une borne hors service
+  private borneHorsServiceId: string | null = null;
 
-  // Carte Leaflet
+  estHorsService(id: string): boolean {
+    return id === this.borneHorsServiceId;
+  }
+
+  // ===== CARTE LEAFLET =====
+
   private map?: L.Map;
   private marqueurs = L.layerGroup();
 
   private creerIconeBorne(disponible: boolean): L.DivIcon {
     const couleur = disponible ? '#168365' : '#f59e0b';
-    
+
     return L.divIcon({
       className: 'marqueur-borne',
       html: `
-       <div style="
-        width: 24px;
-        height: 24px;
-        background: ${couleur};
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-       "></div>
+        <div style="
+          width: 24px;
+          height: 24px;
+          background: ${couleur};
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        "></div>
       `,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
       popupAnchor: [0, -12]
     });
-}
+  }
 
+  // ===== INITIALISATION =====
 
-  // Récupération des bornes
   ngOnInit(): void {
+    this.chargerFavoris();
+
     this.borneService.getBornes().subscribe({
       next: (data) => {
         this.bornes.set(data);
         this.chargement.set(false);
 
+        // Choisir une borne hors service
+        // une seule fois au chargement initial
+        if (
+          this.borneHorsServiceId === null &&
+          data.length > 0
+        ) {
+          this.borneHorsServiceId = data[0].id;
+        }
+
         if (this.map) {
           this.afficherBornesSurCarte(data);
         }
       },
+
       error: (err) => {
         console.error('Erreur API Bornes :', err);
         this.erreur.set('Impossible de récupérer les bornes.');
@@ -138,7 +222,6 @@ estFavori(id: string): boolean {
     });
   }
 
-  // Initialisation de la carte
   ngAfterViewInit(): void {
     this.initialiserCarte();
 
@@ -168,23 +251,24 @@ estFavori(id: string): boolean {
     }
   }
 
-  // Affichage des bornes sur la carte
+  // ===== AFFICHAGE DES MARQUEURS =====
+
   private afficherBornesSurCarte(bornes: Borne[]): void {
     if (!this.map) {
       return;
     }
 
     this.marqueurs.clearLayers();
-    if (this.borneHorsServiceId === null && bornes.length > 0) {
-      this.borneHorsServiceId = bornes[0].id;
-    }
 
-    bornes.forEach((borne, index) => {
-      // Démonstration : une seule borne hors service
-      const disponible = borne.id !== this.borneHorsServiceId;
+    bornes.forEach(borne => {
+
+      const disponible = !this.estHorsService(borne.id);
+
       const marqueur = L.marker(
         [borne.latitude, borne.longitude],
-        { icon: this.creerIconeBorne(true) }
+        {
+          icon: this.creerIconeBorne(disponible)
+        }
       );
 
       const popup = document.createElement('div');
@@ -197,10 +281,13 @@ estFavori(id: string): boolean {
         `Adresse : ${borne.adresse}`,
         `Ville : ${borne.ville}`,
         `Puissance : ${borne.puissance} kW`,
-        `Connecteur : ${borne.typeConnecteur}`
+        `Connecteur : ${borne.typeConnecteur}`,
+        `Statut (simulation) : ${
+          disponible ? 'Disponible' : 'Hors service'
+        }`
       ];
 
-      informations.forEach((information) => {
+      informations.forEach(information => {
         const ligne = document.createElement('p');
         ligne.textContent = information;
         popup.appendChild(ligne);
@@ -211,7 +298,8 @@ estFavori(id: string): boolean {
     });
   }
 
-  // Nettoyage lorsque l'on quitte la page
+  // ===== NETTOYAGE =====
+
   ngOnDestroy(): void {
     this.map?.remove();
   }

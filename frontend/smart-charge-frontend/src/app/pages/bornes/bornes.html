@@ -124,7 +124,7 @@
       <div class="bornes-list">
 
         @if (!chargement() && !erreur()) {
-          @for (borne of bornes(); track borne.id) {
+          @for (borne of bornesTriees(); track borne.id) {
 
             <a class="borne-card" [routerLink]="['/reserver', borne.id]">
               <div class="borne-card-header">
@@ -156,6 +156,22 @@
                 <span>{{ borne.puissance }} kW</span>
                 <span>{{ borne.typeConnecteur }}</span>
               </div>
+
+              <!-- Statut de la borne (simulation) -->
+              <div class="borne-statut">
+
+                @if (estHorsService(borne.id)) {
+                  <span class="statut-badge hors-service">
+                    Hors service
+                  </span>
+                } @else {
+                  <span class="statut-badge disponible">
+                    Disponible
+                  </span>
+                }
+              </div>
+
+
 
             </a>
 
