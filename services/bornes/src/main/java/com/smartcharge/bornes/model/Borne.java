@@ -19,6 +19,8 @@ public class Borne {
 
     private double puissance;
     private String typeConnecteur;
+    private String statut = "DISPONIBLE";
+
 
     public Borne() {
     }
@@ -85,5 +87,23 @@ public class Borne {
 
     public void setTypeConnecteur(String typeConnecteur) {
         this.typeConnecteur = typeConnecteur;
+    }
+
+    public String getStatut() {
+        return statut;
+    }
+
+    public void setStatut(String statut) {
+        if (statut == null) {
+            this.statut = "DISPONIBLE";
+        } else if (
+            statut.equals("DISPONIBLE") ||
+            statut.equals("HORS_SERVICE")
+        ) {
+            this.statut = statut;
+        } else {
+            throw new IllegalArgumentException(
+                "Statut invalide : " + statut
+             );    
     }
 }
