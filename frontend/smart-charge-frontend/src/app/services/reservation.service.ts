@@ -51,6 +51,10 @@ export class ReservationService {
     return this.http.patch<Reservation>(`${this.apiUrl}/${id}/annulation`, {});
   }
 
+  supprimer(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
   disponibilites(borneId: string, date: string): Observable<Disponibilites> {
     const params = new HttpParams().set('borneId', borneId).set('date', date);
     return this.http.get<Disponibilites>(`${this.apiUrl}/disponibilites`, { params });

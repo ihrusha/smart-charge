@@ -483,4 +483,34 @@ class ReservationApiTest {
         // Les index uniques ne s'appliquent qu'aux réservations CONFIRMEE
         assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
     }
+
+        // ---------- Suppression ----------
+
+    @Test
+    void supprimerUneReservationAnnulee_renvoie204() throws Exception {
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
+        envoyer("PATCH", "/api/reservations/" + id + "/annulation", USER_1, null);
+
+        HttpResponse<String> r = envoyer("DELETE", "/api/reservations/" + id, USER_1, null);
+        assertEquals(204, r.statusCode());
+
+        assertEquals("[]", envoyer("GET", "/api/reservations", USER_1, null).body());
+    }
+
+    @Test
+    void supprimerUneReservationConfirmee_renvoie409() throws Exception {
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
+
+        HttpResponse<String> r = envoyer("DELETE", "/api/reservations/" + id, USER_1, null);
+        assertEquals(409, r.statusCode());
+        assertTrue(r.body().contains("Annulez la réservation"));
+    }
+
+    @Test
+    void supprimerLaReservationDUnAutre_renvoie404() throws Exception {
+        String id = extraireId(reserver(USER_1, BORNE_1, date, "14:00:00").body());
+        envoyer("PATCH", "/api/reservations/" + id + "/annulation", USER_1, null);
+
+        assertEquals(404, envoyer("DELETE", "/api/reservations/" + id, USER_2, null).statusCode());
+    }
 }

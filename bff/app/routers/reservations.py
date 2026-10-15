@@ -2,7 +2,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, HTTPException, Path, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.config import get_settings
 
@@ -17,7 +17,7 @@ async def forward_to_reservations_service(
     method: str,
     path: str = "",
     payload: dict[str, Any] | None = None,
-) -> JSONResponse:
+) -> Response:
     settings = get_settings()
     url = f"{settings.reservations_service_url.rstrip('/')}/api/reservations{path}"
 
@@ -40,6 +40,10 @@ async def forward_to_reservations_service(
             detail="Reservations service unavailable",
         )
 
+    # A 204 carries no body: there is nothing to decode.
+    if response.status_code == 204:
+        return Response(status_code=204)
+
     try:
         response_body = response.json()
     except ValueError:
@@ -58,6 +62,7 @@ async def forward_to_reservations_service(
 async def list_reservations(request: Request):
     return await forward_to_reservations_service(request, "GET")
 
+
 @router.get("/disponibilites")
 async def get_disponibilites(
     request: Request,
@@ -67,6 +72,7 @@ async def get_disponibilites(
     return await forward_to_reservations_service(
         request, "GET", f"/disponibilites?borneId={borne_id}&date={date}"
     )
+
 
 @router.get("/{reservation_id}")
 async def get_reservation(request: Request, reservation_id: ReservationId):
@@ -86,4 +92,11 @@ async def create_reservation(request: Request, payload: dict[str, Any]):
 async def cancel_reservation(request: Request, reservation_id: ReservationId):
     return await forward_to_reservations_service(
         request, "PATCH", f"/{reservation_id}/annulation"
+    )
+
+
+@router.delete("/{reservation_id}")
+async def delete_reservation(request: Request, reservation_id: ReservationId):
+    return await forward_to_reservations_service(
+        request, "DELETE", f"/{reservation_id}"
     )

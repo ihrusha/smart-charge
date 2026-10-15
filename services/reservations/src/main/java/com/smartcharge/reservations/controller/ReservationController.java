@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import com.smartcharge.reservations.client.BorneClient;
 import com.smartcharge.reservations.model.Reservation;
@@ -162,6 +163,22 @@ public class ReservationController {
         r.setStatut(Statut.ANNULEE);
         return repository.save(r);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> supprimer(@PathVariable String id,
+                                       @RequestAttribute("userId") String userId) {
+        Reservation r = findOwned(id, userId);
+
+        // On ne supprime que l'historique : une réservation confirmée doit d'abord être annulée
+        if (r.getStatut() != Statut.ANNULEE) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Annulez la réservation avant de la supprimer"));
+        }
+
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
     // Renvoie un message d'erreur, ou null si la requête est valide.
     private String valider(CreateReservationRequest body) {

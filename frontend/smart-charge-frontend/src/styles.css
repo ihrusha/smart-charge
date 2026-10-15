@@ -477,3 +477,33 @@ a.borne-card:hover {
 .fiche-compte .bouton-secondaire {
   margin-top: 20px;
 }
+
+.borne-card {
+  position: relative;
+}
+
+.croix {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #888;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.croix:hover {
+  background: #fae6d2;
+  color: #a4600f;
+}
+
+.croix:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}

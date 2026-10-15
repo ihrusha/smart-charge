@@ -32,6 +32,13 @@
           <span class="badge" [class.annulee]="r.statut === 'ANNULEE'">
             {{ r.statut === 'CONFIRMEE' ? 'Confirmée' : 'Annulée' }}
           </span>
+
+      @if (onglet() === 'annulees') {
+        <button type="button" class="croix"
+                [disabled]="suppressionEnCours() === r.id"
+                (click)="supprimer(r)"
+                aria-label="Supprimer cette réservation">×</button>
+      }
           <h3>{{ nomBorne(r.borneId) }}</h3>
 
           <p>{{ creneau(r) }}</p>

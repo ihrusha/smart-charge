@@ -18,12 +18,13 @@ export class MesReservations implements OnInit {
 
   reservations = signal<Reservation[]>([]);
   private nomsDesBornes = signal<Record<string, string>>({});
-
+  
   chargement = signal(true);
   erreur = signal('');
   message = signal('');
   onglet = signal<Onglet>('avenir');
   annulationEnCours = signal<string | null>(null);
+  suppressionEnCours = signal<string | null>(null);
 
   // Une réservation est "à venir" si son créneau n'a pas encore commencé
   private estAVenir(r: Reservation): boolean {
@@ -119,6 +120,28 @@ export class MesReservations implements OnInit {
       error: (err) => {
         this.annulationEnCours.set(null);
         this.erreur.set(err.error?.error ?? "L'annulation a échoué.");
+      },
+    });
+  }
+
+  supprimer(r: Reservation): void {
+    if (!confirm('Supprimer définitivement cette réservation de votre historique ?')) {
+      return;
+    }
+
+    this.erreur.set('');
+    this.message.set('');
+    this.suppressionEnCours.set(r.id);
+
+    this.reservationService.supprimer(r.id).subscribe({
+      next: () => {
+        this.reservations.update((liste) => liste.filter((item) => item.id !== r.id));
+        this.suppressionEnCours.set(null);
+        this.message.set('Réservation supprimée.');
+      },
+      error: (err) => {
+        this.suppressionEnCours.set(null);
+        this.erreur.set(err.error?.error ?? 'La suppression a échoué.');
       },
     });
   }
