@@ -1,7 +1,8 @@
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+export type StatutBorne = 'DISPONIBLE' | 'HORS_SERVICE';
 
 export interface Borne {
   id: string;
@@ -12,6 +13,7 @@ export interface Borne {
   longitude: number;
   puissance: number;
   typeConnecteur: string;
+  statut: StatutBorne;
 }
 
 @Injectable({
@@ -46,7 +48,7 @@ export class BorneService {
     return this.http.get<Borne[]>(this.apiUrl, { params });
   }
 
-    getBorne(id: string): Observable<Borne> {
+  getBorne(id: string): Observable<Borne> {
     return this.http.get<Borne>(`${this.apiUrl}/${id}`);
   }
 }

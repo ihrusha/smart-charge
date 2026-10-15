@@ -155,13 +155,11 @@ export class Bornes implements OnInit, AfterViewInit, OnDestroy {
     this.appliquerFiltres();
   }
 
-  // ===== STATUT DES BORNES =====
+    // ===== STATUT DES BORNES =====
 
-  // Simulation : une borne hors service
-  private borneHorsServiceId: string | null = null;
-
+  // Le statut vient du service Bornes (champ "statut" de l'API)
   estHorsService(id: string): boolean {
-    return id === this.borneHorsServiceId;
+    return this.bornes().some((b) => b.id === id && b.statut === 'HORS_SERVICE');
   }
 
   // ===== CARTE LEAFLET =====
@@ -200,14 +198,6 @@ export class Bornes implements OnInit, AfterViewInit, OnDestroy {
         this.bornes.set(data);
         this.chargement.set(false);
 
-        // Choisir une borne hors service
-        // une seule fois au chargement initial
-        if (
-          this.borneHorsServiceId === null &&
-          data.length > 0
-        ) {
-          this.borneHorsServiceId = data[0].id;
-        }
 
         if (this.map) {
           this.afficherBornesSurCarte(data);

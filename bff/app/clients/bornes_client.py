@@ -1,4 +1,3 @@
-
 import httpx
 
 from app.config import get_settings
@@ -30,6 +29,22 @@ async def get_bornes(
         response = await client.get(
             f"{settings.stations_service_url}/bornes",
             params=params,
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+
+async def get_borne(borne_id: str):
+    settings = get_settings()
+
+    async with httpx.AsyncClient(
+        timeout=settings.http_timeout_seconds
+    ) as client:
+
+        response = await client.get(
+            f"{settings.stations_service_url}/bornes/{borne_id}",
         )
 
         response.raise_for_status()
