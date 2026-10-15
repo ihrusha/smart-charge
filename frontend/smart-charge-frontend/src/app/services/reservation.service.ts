@@ -23,15 +23,18 @@ export interface NouvelleReservation {
 export interface Creneau {
   heureDebut: string;   // "14:00"
   disponible: boolean;
-  motif: 'PASSE' | 'BORNE_OCCUPEE' | 'DEJA_RESERVE' | null;
+  motif: 'PASSE' | 'BORNE_OCCUPEE' | 'DEJA_RESERVE' | 'BORNE_HORS_SERVICE' | null;
 }
 
 export interface Disponibilites {
   borneId: string;
   date: string;
   dureeMinutes: number;
+  horsService: boolean;
   creneaux: Creneau[];
 }
+
+
 
 @Injectable({ providedIn: 'root' })
 export class ReservationService {

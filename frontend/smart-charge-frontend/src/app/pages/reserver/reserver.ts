@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { Borne, BorneService } from '../../services/borne.service';
 import { Creneau, ReservationService } from '../../services/reservation.service';
+import { FavorisService } from '../../services/favoris.service';
 
 interface Periode {
   nom: string;
@@ -20,6 +21,7 @@ export class Reserver implements OnInit {
   private router = inject(Router);
   private borneService = inject(BorneService);
   private reservationService = inject(ReservationService);
+  private favorisService = inject(FavorisService);
 
   borneId = '';
   borne = signal<Borne | null>(null);
@@ -28,6 +30,9 @@ export class Reserver implements OnInit {
   jourChoisi = signal('');
   creneaux = signal<Creneau[]>([]);
   creneauChoisi = signal<string | null>(null);
+
+  /** La borne est hors service : aucune réservation possible. */
+  horsService = signal(false);
 
   chargement = signal(true);
   envoi = signal(false);
@@ -66,19 +71,32 @@ export class Reserver implements OnInit {
     this.jours.set(dates);
     this.jourChoisi.set(dates[0]);
 
-    // Le BFF n'expose pas encore GET /api/bornes/{id} : on cherche dans la liste
-    this.borneService.getBornes().subscribe({
-      next: (liste) => {
-        const trouvee = liste.find((b) => b.id === this.borneId);
-        if (trouvee) {
-          this.borne.set(trouvee);
-        }
-      },
+    this.borneService.getBorne(this.borneId).subscribe({
+      next: (b) => this.borne.set(b),
       error: () => {},
     });
 
+    // Favoris : même stockage que la liste des bornes
+    this.favorisService.charger();
+
     this.chargerCreneaux();
   }
+
+  // ===== FAVORIS =====
+
+  favorisPrets(): boolean {
+    return this.favorisService.pret();
+  }
+
+  estFavori(): boolean {
+    return this.favorisService.estFavori(this.borneId);
+  }
+
+  basculerFavori(): void {
+    this.favorisService.basculer(this.borneId);
+  }
+
+  // ===== CRÉNEAUX =====
 
   // Date locale au format AAAA-MM-JJ (toISOString donnerait l'heure UTC)
   private enTexte(d: Date): string {
@@ -107,12 +125,13 @@ export class Reserver implements OnInit {
       case 'PASSE': return 'Ce créneau est déjà passé';
       case 'BORNE_OCCUPEE': return 'Cette borne est déjà réservée sur ce créneau';
       case 'DEJA_RESERVE': return 'Vous avez déjà une réservation sur ce créneau';
+      case 'BORNE_HORS_SERVICE': return 'Cette borne est hors service';
       default: return '';
     }
   }
 
   aucunCreneauDisponible(): boolean {
-    return !this.chargement() && this.periodes().length === 0;
+    return !this.chargement() && !this.horsService() && this.periodes().length === 0;
   }
 
   choisirJour(date: string): void {
@@ -136,6 +155,7 @@ export class Reserver implements OnInit {
 
     this.reservationService.disponibilites(this.borneId, this.jourChoisi()).subscribe({
       next: (d) => {
+        this.horsService.set(d.horsService === true);
         this.creneaux.set(d.creneaux);
         this.chargement.set(false);
       },

@@ -507,3 +507,89 @@ a.borne-card:hover {
   color: #ccc;
   cursor: not-allowed;
 }
+
+/* ===== Page de réservation : en-tête borne + bouton favori ===== */
+
+.entete-borne {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.infos-borne {
+  min-width: 0;
+}
+
+.favori-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: 1px solid #d7e0da;
+  border-radius: 999px;
+  background: #fff;
+  color: #15231c;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.favori-toggle:hover:not(:disabled) {
+  border-color: #16835d;
+}
+
+.favori-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.favori-toggle .coeur {
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #9aa8a0;
+}
+
+.favori-toggle.actif {
+  background: #16835d;
+  border-color: #16835d;
+  color: #fff;
+}
+
+.favori-toggle.actif .coeur {
+  color: #fff;
+}
+
+/* ===== Bandeau borne hors service ===== */
+
+.bandeau-hors-service {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 24px 28px;
+  border: 1px solid #f0c9a0;
+  border-left: 6px solid #b4530a;
+  border-radius: 14px;
+  background: #fdf4ea;
+}
+
+.bandeau-hors-service strong {
+  font-size: 1.15rem;
+  color: #8a3f08;
+}
+
+.bandeau-hors-service p {
+  margin: 0;
+  color: #6b4a2c;
+  line-height: 1.5;
+}
+
+.bandeau-hors-service .bouton-principal {
+  display: inline-block;
+  text-decoration: none;
+}
