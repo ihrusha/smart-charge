@@ -1,5 +1,6 @@
 /* Styles globaux de l'application */
 @import "leaflet/dist/leaflet.css";
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -83,6 +84,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-top: 20px;
+  align-items: stretch;
 }
 
 .borne-card {
@@ -90,6 +92,12 @@ body {
   border: 1px solid #ddd;
   border-radius: 12px;
   background: #f8faf9;
+}
+
+/* Cartes de même hauteur, bouton aligné en bas */
+.bornes-grid > .borne-card {
+  display: flex;
+  flex-direction: column;
 }
 
 .borne-card h3 {
@@ -212,6 +220,7 @@ body {
 
 .onglets {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 20px 0;
 }
@@ -231,18 +240,6 @@ body {
   color: #fff;
 }
 
-.ligne-titre {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.ligne-titre h3 {
-  margin: 0;
-  font-size: 17px;
-}
-
 .badge {
   padding: 4px 10px;
   border-radius: 999px;
@@ -257,9 +254,19 @@ body {
   color: #a4600f;
 }
 
+.borne-card .badge {
+  align-self: flex-start;
+  margin-bottom: 10px;
+}
+
+.borne-card h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
 .bouton-secondaire {
   width: 100%;
-  margin-top: 14px;
+  margin-top: auto;
   padding: 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -310,6 +317,12 @@ body {
   margin-top: 16px;
 }
 
+.periode {
+  margin: 24px 0 0;
+  font-size: 15px;
+  color: #444;
+}
+
 .creneau {
   padding: 14px;
   border: 1px solid #ccc;
@@ -354,18 +367,43 @@ body {
   font-size: 15px;
 }
 
+/* Barre fixe en bas de l'écran, visible même après avoir fait défiler */
 .recap {
-  max-width: 420px;
-  margin-top: 24px;
-  padding: 20px;
-  border: 1px solid #e3e6e5;
-  border-radius: 12px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 16px 30px;
+  border-top: 1px solid #e3e6e5;
   background: #fff;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.recap h4,
+.recap p {
+  margin: 0;
 }
 
 .recap h4 {
-  margin-top: 0;
+  font-size: 15px;
 }
+
+.recap .bouton-principal {
+  width: auto;
+  margin: 0 0 0 auto;
+  padding: 12px 28px;
+}
+
+/* Espace en bas de page pour que la barre ne masque pas le dernier contenu */
+.aide {
+  margin-bottom: 90px;
+}
+
 
 .bouton-principal {
   width: 100%;
