@@ -1,5 +1,6 @@
 /* Styles globaux de l'application */
 @import "leaflet/dist/leaflet.css";
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -20,6 +21,9 @@ body {
 /* Barre de navigation */
 
 .barre {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -29,10 +33,19 @@ body {
 }
 
 .barre .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 20px;
   font-weight: bold;
   color: #16835d;
   text-decoration: none;
+}
+
+.logo-image {
+  height: 40px;
+  width: auto;
+  border-radius: 6px;
 }
 
 .barre nav {
@@ -50,14 +63,31 @@ body {
   font-weight: bold;
 }
 
-.barre .lien {
+.barre .lien-compte {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
-  background: none;
-  border: none;
   color: #444;
-  cursor: pointer;
-  font-size: 15px;
+  text-decoration: none;
 }
+
+.barre .lien-compte.actif {
+  color: #16835d;
+  font-weight: bold;
+}
+
+.icone-compte {
+  font-size: 20px;
+}
+
+/* Sur petit écran, l'icône seule suffit */
+@media (max-width: 600px) {
+  .texte-compte {
+    display: none;
+  }
+}
+
 
 /* Bornes */
 
@@ -66,6 +96,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-top: 20px;
+  align-items: stretch;
 }
 
 .borne-card {
@@ -75,16 +106,53 @@ body {
   background: #f8faf9;
 }
 
+/* Cartes de même hauteur, bouton aligné en bas */
+.bornes-grid > .borne-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .borne-card h3 {
   color: #16835d;
 }
 
 /* Écrans de connexion et d'inscription */
 
+/* Page de connexion et d'inscription en deux colonnes */
+
+.page-auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+  padding: 40px 30px;
+}
+
+.visuel-auth {
+  flex: 1 1 420px;
+  max-width: 560px;
+}
+
+.visuel-auth img {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  display: block;
+}
+
+/* Sur petit écran, l'image passe au-dessus du formulaire */
+@media (max-width: 760px) {
+  .visuel-auth {
+    display: none;
+  }
+}
+
 .carte-auth {
   max-width: 420px;
-  margin: 60px auto;
+  margin: 0;
   padding: 32px;
+  flex: 0 1 420px;
   background: #fff;
   border: 1px solid #e3e6e5;
   border-radius: 12px;
@@ -164,6 +232,7 @@ body {
 
 .onglets {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 20px 0;
 }
@@ -183,18 +252,6 @@ body {
   color: #fff;
 }
 
-.ligne-titre {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.ligne-titre h3 {
-  margin: 0;
-  font-size: 17px;
-}
-
 .badge {
   padding: 4px 10px;
   border-radius: 999px;
@@ -209,9 +266,19 @@ body {
   color: #a4600f;
 }
 
+.borne-card .badge {
+  align-self: flex-start;
+  margin-bottom: 10px;
+}
+
+.borne-card h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
 .bouton-secondaire {
   width: 100%;
-  margin-top: 14px;
+  margin-top: auto;
   padding: 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -262,6 +329,12 @@ body {
   margin-top: 16px;
 }
 
+.periode {
+  margin: 24px 0 0;
+  font-size: 15px;
+  color: #444;
+}
+
 .creneau {
   padding: 14px;
   border: 1px solid #ccc;
@@ -306,18 +379,43 @@ body {
   font-size: 15px;
 }
 
+/* Barre fixe en bas de l'écran, visible même après avoir fait défiler */
 .recap {
-  max-width: 420px;
-  margin-top: 24px;
-  padding: 20px;
-  border: 1px solid #e3e6e5;
-  border-radius: 12px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 16px 30px;
+  border-top: 1px solid #e3e6e5;
   background: #fff;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.recap h4,
+.recap p {
+  margin: 0;
 }
 
 .recap h4 {
-  margin-top: 0;
+  font-size: 15px;
 }
+
+.recap .bouton-principal {
+  width: auto;
+  margin: 0 0 0 auto;
+  padding: 12px 28px;
+}
+
+/* Espace en bas de page pour que la barre ne masque pas le dernier contenu */
+.aide {
+  margin-bottom: 90px;
+}
+
 
 .bouton-principal {
   width: 100%;
@@ -347,4 +445,35 @@ a.borne-card {
 
 a.borne-card:hover {
   border-color: #16835d;
+}
+
+/* Mon compte */
+
+.fiche-compte {
+  max-width: 480px;
+  margin-top: 20px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e3e6e5;
+  border-radius: 12px;
+}
+
+.ligne-compte {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eef1f0;
+}
+
+.ligne-compte .libelle {
+  color: #666;
+}
+
+.ligne-compte .valeur {
+  font-weight: bold;
+}
+
+.fiche-compte .bouton-secondaire {
+  margin-top: 20px;
 }

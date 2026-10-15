@@ -394,8 +394,8 @@ class ReservationApiTest {
                 "/api/reservations/disponibilites?borneId=" + BORNE_1 + "&date=" + date, USER_1, null);
 
         assertEquals(200, r.statusCode());
-        // 8h00 à 19h30 par pas de 30 minutes = 24 créneaux
-        assertEquals(24, r.body().split("\"heureDebut\"", -1).length - 1);
+        // Minuit à 23h30 par pas de 30 minutes = 48 créneaux
+        assertEquals(48, r.body().split("\"heureDebut\"", -1).length - 1);
         assertTrue(r.body().contains("\"dureeMinutes\":30"));
     }
 

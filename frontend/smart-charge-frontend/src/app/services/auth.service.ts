@@ -12,6 +12,16 @@ export interface RegisterResponse {
   user: { id: string; email: string; created_at: string };
 }
 
+export interface Utilisateur {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface MeResponse {
+  user: Utilisateur;
+}
+
 const CLE_TOKEN = 'smartcharge_token';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +44,10 @@ export class AuthService {
 
   register(email: string, password: string): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.apiUrl}/register`, { email, password });
+  }
+
+  me(): Observable<MeResponse> {
+    return this.http.get<MeResponse>(`${this.apiUrl}/me`);
   }
 
   logout(): void {

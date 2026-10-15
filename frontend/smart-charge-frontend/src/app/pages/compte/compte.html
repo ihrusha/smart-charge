@@ -1,0 +1,29 @@
+<section>
+  <h2>Mon compte</h2>
+
+  @if (chargement()) {
+    <p>Chargement...</p>
+  }
+
+  @if (erreur()) {
+    <p class="erreur">{{ erreur() }}</p>
+  }
+
+  @if (utilisateur(); as u) {
+    <div class="fiche-compte">
+      <div class="ligne-compte">
+        <span class="libelle">Adresse e-mail</span>
+        <span class="valeur">{{ u.email }}</span>
+      </div>
+
+      <div class="ligne-compte">
+        <span class="libelle">Membre depuis</span>
+        <span class="valeur">{{ dateInscription(u.created_at) }}</span>
+      </div>
+
+      <button type="button" class="bouton-secondaire" (click)="seDeconnecter()">
+        Se déconnecter
+      </button>
+    </div>
+  }
+</section>

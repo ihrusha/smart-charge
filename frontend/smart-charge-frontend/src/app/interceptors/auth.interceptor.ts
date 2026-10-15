@@ -9,18 +9,21 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  // On n'ajoute pas le token aux appels de connexion et d'inscription
-  const estAppelAuth = req.url.includes('/api/auth/');
+  // Connexion et inscription n'ont pas de token : les autres routes en ont besoin,
+  // y compris /api/auth/me
+  const estAppelPublic = req.url.includes('/api/auth/login')
+    || req.url.includes('/api/auth/register');
+
   const token = auth.token;
 
-  const requete = token && !estAppelAuth
+  const requete = token && !estAppelPublic
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 
   return next(requete).pipe(
     catchError((erreur) => {
       // Token absent, expiré ou invalide : on repart de la connexion
-      if (erreur.status === 401 && !estAppelAuth) {
+      if (erreur.status === 401 && !estAppelPublic) {
         auth.logout();
         router.navigate(['/connexion']);
       }

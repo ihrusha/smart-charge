@@ -1,8 +1,13 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { Borne, BorneService } from '../../services/borne.service';
 import { Creneau, ReservationService } from '../../services/reservation.service';
+
+interface Periode {
+  nom: string;
+  creneaux: Creneau[];
+}
 
 @Component({
   selector: 'app-reserver',
@@ -29,6 +34,25 @@ export class Reserver implements OnInit {
   erreur = signal('');
   succes = signal('');
 
+  // Les 48 créneaux regroupés en quatre périodes de la journée
+  periodes = computed<Periode[]>(() => {
+    const groupes: Periode[] = [
+      { nom: '🌙 Nuit · 00h – 06h', creneaux: [] },
+      { nom: '🌅 Matin · 06h – 12h', creneaux: [] },
+      { nom: '☀️ Après-midi · 12h – 18h', creneaux: [] },
+      { nom: '🌆 Soir · 18h – 00h', creneaux: [] },
+    ];
+
+    for (const c of this.creneaux()) {
+      const heure = Number(c.heureDebut.split(':')[0]);
+      const index = heure < 6 ? 0 : heure < 12 ? 1 : heure < 18 ? 2 : 3;
+      groupes[index].creneaux.push(c);
+    }
+
+    // On masque une période entièrement indisponible (ex. la nuit déjà passée)
+    return groupes.filter((g) => g.creneaux.some((c) => c.disponible));
+  });
+
   ngOnInit(): void {
     this.borneId = this.route.snapshot.paramMap.get('borneId') ?? '';
 
@@ -42,9 +66,15 @@ export class Reserver implements OnInit {
     this.jours.set(dates);
     this.jourChoisi.set(dates[0]);
 
-    this.borneService.getBorne(this.borneId).subscribe({
-      next: (b) => this.borne.set(b),
-      error: () => this.erreur.set('Borne introuvable.'),
+    // Le BFF n'expose pas encore GET /api/bornes/{id} : on cherche dans la liste
+    this.borneService.getBornes().subscribe({
+      next: (liste) => {
+        const trouvee = liste.find((b) => b.id === this.borneId);
+        if (trouvee) {
+          this.borne.set(trouvee);
+        }
+      },
+      error: () => {},
     });
 
     this.chargerCreneaux();
@@ -79,6 +109,10 @@ export class Reserver implements OnInit {
       case 'DEJA_RESERVE': return 'Vous avez déjà une réservation sur ce créneau';
       default: return '';
     }
+  }
+
+  aucunCreneauDisponible(): boolean {
+    return !this.chargement() && this.periodes().length === 0;
   }
 
   choisirJour(date: string): void {

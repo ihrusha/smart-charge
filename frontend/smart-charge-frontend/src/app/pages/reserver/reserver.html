@@ -35,21 +35,28 @@
   }
 
   @if (!chargement()) {
-    <div class="creneaux">
-      @for (c of creneaux(); track c.heureDebut) {
-        <button type="button"
-                class="creneau"
-                [class.indisponible]="!c.disponible"
-                [class.choisi]="creneauChoisi() === c.heureDebut"
-                [disabled]="!c.disponible"
-                [title]="infobulle(c)"
-                (click)="choisirCreneau(c)">
-          {{ libelleCreneau(c.heureDebut) }}
-        </button>
-      }
-    </div>
+    @for (p of periodes(); track p.nom) {
+      <h4 class="periode">{{ p.nom }}</h4>
+      <div class="creneaux">
+        @for (c of p.creneaux; track c.heureDebut) {
+          <button type="button"
+                  class="creneau"
+                  [class.indisponible]="!c.disponible"
+                  [class.choisi]="creneauChoisi() === c.heureDebut"
+                  [disabled]="!c.disponible"
+                  [title]="infobulle(c)"
+                  (click)="choisirCreneau(c)">
+            {{ libelleCreneau(c.heureDebut) }}
+          </button>
+        }
+      </div>
+    }
 
-    <p class="aide">Créneaux de 30 minutes, de 8h à 20h, sur 7 jours.</p>
+    @if (aucunCreneauDisponible()) {
+      <p>Aucun créneau disponible pour cette date.</p>
+    }
+
+    <p class="aide">Créneaux de 30 minutes, 24h/24, sur 7 jours.</p>
 
     @if (creneauChoisi()) {
       <div class="recap">
