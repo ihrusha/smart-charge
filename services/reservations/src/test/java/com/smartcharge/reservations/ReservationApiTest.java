@@ -1,6 +1,7 @@
 package com.smartcharge.reservations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -64,11 +65,15 @@ class ReservationApiTest {
     static final String BORNE_INCONNUE = "650000000000000000000404";
     static final String BORNE_EN_PANNE = "650000000000000000000500";
     static final String BORNE_LENTE = "650000000000000000000998";
+    static final String BORNE_HORS_SERVICE = "650000000000000000000099";
 
-    static final Set<String> BORNES_CONNUES = Set.of(BORNE_1, BORNE_2, BORNE_3, BORNE_ABC);
+    // La borne hors service EXISTE : elle répond 200, c'est son statut qui la rend inutilisable
+    static final Set<String> BORNES_CONNUES =
+            Set.of(BORNE_1, BORNE_2, BORNE_3, BORNE_ABC, BORNE_HORS_SERVICE);
+
     static final AtomicReference<String> DERNIERE_AUTH = new AtomicReference<>();
 
-    // Faux service bornes : 200 si connue, 500 si en panne, réponse lente, 404 sinon
+    // Faux service bornes : 200 si connue (avec son statut), 500 si en panne, lent, 404 sinon
     static final HttpServer BORNES = demarrerFauxServiceBornes();
 
     static HttpServer demarrerFauxServiceBornes() {
@@ -90,7 +95,9 @@ class ReservationApiTest {
                     }
                 }
                 int code = BORNES_CONNUES.contains(id) ? 200 : BORNE_EN_PANNE.equals(id) ? 500 : 404;
-                byte[] corps = ("{\"id\":\"" + id + "\"}").getBytes(StandardCharsets.UTF_8);
+                String statut = BORNE_HORS_SERVICE.equals(id) ? "HORS_SERVICE" : "DISPONIBLE";
+                byte[] corps = ("{\"id\":\"" + id + "\",\"statut\":\"" + statut + "\"}")
+                        .getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(code, corps.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -354,6 +361,16 @@ class ReservationApiTest {
     }
 
     @Test
+    void borneHorsService_renvoie409_etRienNEstEnregistre() throws Exception {
+        HttpResponse<String> r = reserver(USER_1, BORNE_HORS_SERVICE, date, "14:00:00");
+        assertEquals(409, r.statusCode());
+        assertTrue(r.body().contains("hors service"));
+
+        // Aucune réservation ne doit avoir été enregistrée
+        assertEquals("[]", envoyer("GET", "/api/reservations", USER_1, null).body());
+    }
+
+    @Test
     void serviceBornesEnPanne_renvoie503() throws Exception {
         HttpResponse<String> r = reserver(USER_1, BORNE_EN_PANNE, date, "14:00:00");
         assertEquals(503, r.statusCode());
@@ -423,6 +440,20 @@ class ReservationApiTest {
     }
 
     @Test
+    void disponibilites_borneHorsService_aucunCreneauDisponible() throws Exception {
+        HttpResponse<String> r = envoyer("GET",
+                "/api/reservations/disponibilites?borneId=" + BORNE_HORS_SERVICE + "&date=" + date,
+                USER_1, null);
+
+        assertEquals(200, r.statusCode());
+        assertTrue(r.body().contains("\"horsService\":true"));
+        assertTrue(r.body().contains("BORNE_HORS_SERVICE"));
+        // Pas un seul créneau réservable
+        assertFalse(r.body().contains("\"disponible\":true"),
+                "Une borne hors service ne doit proposer aucun créneau");
+    }
+
+    @Test
     void disponibilites_borneIdInvalide_renvoie400() throws Exception {
         HttpResponse<String> r = envoyer("GET",
                 "/api/reservations/disponibilites?borneId=borne-1&date=" + date, USER_1, null);
@@ -484,7 +515,7 @@ class ReservationApiTest {
         assertEquals(201, reserver(USER_1, BORNE_1, date, "14:00:00").statusCode());
     }
 
-        // ---------- Suppression ----------
+    // ---------- Suppression ----------
 
     @Test
     void supprimerUneReservationAnnulee_renvoie204() throws Exception {

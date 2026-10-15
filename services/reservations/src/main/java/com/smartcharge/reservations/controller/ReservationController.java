@@ -67,7 +67,8 @@ public class ReservationController {
     public ResponseEntity<?> disponibilites(
             @RequestParam String borneId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestAttribute("userId") String userId) {
+            @RequestAttribute("userId") String userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
 
         if (!OBJECT_ID.matcher(borneId.trim()).matches()) {
             return ResponseEntity.badRequest().body(Map.of("error",
@@ -75,6 +76,12 @@ public class ReservationController {
         }
 
         String borne = borneId.trim().toLowerCase(Locale.ROOT);
+
+        // Une borne hors service n'accepte aucun créneau.
+        // Si le service bornes ne répond pas, on n'empêche pas la consultation :
+        // la réservation, elle, sera refusée au moment du POST.
+        boolean horsService =
+                borneClient.verifier(borne, authorization) == BorneClient.Resultat.HORS_SERVICE;
 
         // Créneaux déjà pris sur cette borne, et créneaux où l'utilisateur est déjà occupé
         Set<LocalTime> borneOccupee = repository
@@ -93,7 +100,9 @@ public class ReservationController {
         LocalTime heure = OUVERTURE;
         do {
             String motif = null;
-            if (!LocalDateTime.of(date, heure).isAfter(maintenant)) {
+            if (horsService) {
+                motif = "BORNE_HORS_SERVICE";
+            } else if (!LocalDateTime.of(date, heure).isAfter(maintenant)) {
                 motif = "PASSE";
             } else if (borneOccupee.contains(heure)) {
                 motif = "BORNE_OCCUPEE";
@@ -109,6 +118,7 @@ public class ReservationController {
                 "borneId", borne,
                 "date", date.toString(),
                 "dureeMinutes", DUREE_CRENEAU.toMinutes(),
+                "horsService", horsService,
                 "creneaux", creneaux));
     }
 
@@ -134,6 +144,10 @@ public class ReservationController {
         if (borne == BorneClient.Resultat.INTROUVABLE) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Borne introuvable"));
+        }
+        if (borne == BorneClient.Resultat.HORS_SERVICE) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Cette borne est hors service"));
         }
         if (borne == BorneClient.Resultat.INDISPONIBLE) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -178,7 +192,6 @@ public class ReservationController {
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
-
 
     // Renvoie un message d'erreur, ou null si la requête est valide.
     private String valider(CreateReservationRequest body) {
