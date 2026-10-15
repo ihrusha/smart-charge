@@ -28,11 +28,33 @@ export class Bornes implements OnInit, AfterViewInit, OnDestroy {
   bornes = signal<Borne[]>([]);
   chargement = signal(true);
   erreur = signal('');
+
+  
+// Liste des identifiants des bornes favorites
+favoris = signal<string[]>([]);
+
+// Ajouter ou retirer une borne des favoris
+toggleFavori(id: string): void {
+  this.favoris.update(liste =>
+    liste.includes(id)
+      ? liste.filter(favoriId => favoriId !== id)
+      : [...liste, id]
+  );
+}
+
+// Vérifier si une borne est favorite
+estFavori(id: string): boolean {
+  return this.favoris().includes(id);
+}
+
   
   // Filtres sélectionnés
   rechercheVille = signal('');
   filtrePuissance = signal(false);
   filtreConnecteur = signal('');
+
+    // Simulation : une borne hors service
+  private borneHorsServiceId: string | null = null;
 
   // Appliquer les filtres
   appliquerFiltres(): void {
@@ -75,15 +97,27 @@ export class Bornes implements OnInit, AfterViewInit, OnDestroy {
   private map?: L.Map;
   private marqueurs = L.layerGroup();
 
-  private iconeBorne = L.icon({
-    iconUrl: '/leaflet/marker-icon.png',
-    iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-    shadowUrl: '/leaflet/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+  private creerIconeBorne(disponible: boolean): L.DivIcon {
+    const couleur = disponible ? '#168365' : '#f59e0b';
+    
+    return L.divIcon({
+      className: 'marqueur-borne',
+      html: `
+       <div style="
+        width: 24px;
+        height: 24px;
+        background: ${couleur};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+       "></div>
+      `,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12]
+    });
+}
+
 
   // Récupération des bornes
   ngOnInit(): void {
@@ -141,11 +175,16 @@ export class Bornes implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.marqueurs.clearLayers();
+    if (this.borneHorsServiceId === null && bornes.length > 0) {
+      this.borneHorsServiceId = bornes[0].id;
+    }
 
-    bornes.forEach((borne) => {
+    bornes.forEach((borne, index) => {
+      // Démonstration : une seule borne hors service
+      const disponible = borne.id !== this.borneHorsServiceId;
       const marqueur = L.marker(
         [borne.latitude, borne.longitude],
-        { icon: this.iconeBorne }
+        { icon: this.creerIconeBorne(true) }
       );
 
       const popup = document.createElement('div');

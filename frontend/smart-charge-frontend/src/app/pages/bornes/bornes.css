@@ -247,3 +247,84 @@
 .reset-btn:hover {
   background: #e5e7eb;
 }
+
+
+/* ===== FAVORIS ===== */
+
+.borne-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.borne-card-header h3 {
+  margin: 0 0 10px;
+}
+
+.favori-btn {
+  border: none;
+  background: transparent;
+  color: #168365;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.favori-btn:hover {
+  transform: scale(1.15);
+}
+
+.favori-btn.est-favori {
+  color: #168365;
+}
+
+
+/* ===== LÉGENDE CARTE ===== */
+
+.carte-panel {
+  position: relative;
+}
+
+.carte-legende {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 500;
+
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  background: white;
+  padding: 12px 18px;
+  border-radius: 10px;
+
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.legende-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.legende-point {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legende-point.disponible {
+  background-color: #168365;
+}
+
+.legende-point.hors-service {
+  background-color: #f59e0b;
+}
+

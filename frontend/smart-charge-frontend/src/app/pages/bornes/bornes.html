@@ -127,8 +127,26 @@
           @for (borne of bornes(); track borne.id) {
 
             <a class="borne-card" [routerLink]="['/reserver', borne.id]">
+              <div class="borne-card-header">
+                <h3>{{ borne.nom }}</h3>
+                
+                <button
+                  type="button"
+                  class="favori-btn"
+                  [class.est-favori]="estFavori(borne.id)"
+                  [attr.aria-label]="estFavori(borne.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                  [attr.aria-pressed]="estFavori(borne.id)"
+                  (click)="$event.preventDefault();$event.stopPropagation(); toggleFavori(borne.id)"
+>
+                  
+                  @if (estFavori(borne.id)) {
+                    ♥
+                  } @else {
+                    ♡
+                  }
+                </button>
+              </div>
 
-              <h3>{{ borne.nom }}</h3>
 
               <p class="borne-adresse">
                 {{ borne.adresse }}, {{ borne.ville }}
@@ -151,9 +169,28 @@
     </div>
 
     <!-- Colonne droite : carte Leaflet -->
+    <!-- <div class="carte-panel">
+      <div id="map"></div>
+      
+    </div> -->
+
     <div class="carte-panel">
       <div id="map"></div>
+      
+      <!-- Légende de disponibilité -->
+      <div class="carte-legende">
+        <div class="legende-item">
+          <span class="legende-point disponible"></span>
+          <span>Disponible</span>
+        </div>
+        
+        <div class="legende-item">
+          <span class="legende-point hors-service"></span>
+          <span>Hors service</span>
+        </div>
+      </div>
     </div>
+
 
   </section>
 
