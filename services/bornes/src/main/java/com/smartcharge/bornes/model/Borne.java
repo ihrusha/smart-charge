@@ -90,7 +90,7 @@ public class Borne {
     }
 
     public String getStatut() {
-        return statut;
+        return statut== null ? "DISPONIBLE" : statut;
     }
 
     public void setStatut(String statut) {
@@ -106,4 +106,5 @@ public class Borne {
                 "Statut invalide : " + statut
              );    
     }
+}
 }
