@@ -21,6 +21,9 @@ body {
 /* Barre de navigation */
 
 .barre {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -30,10 +33,19 @@ body {
 }
 
 .barre .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 20px;
   font-weight: bold;
   color: #16835d;
   text-decoration: none;
+}
+
+.logo-image {
+  height: 40px;
+  width: auto;
+  border-radius: 6px;
 }
 
 .barre nav {
