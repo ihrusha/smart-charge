@@ -6,6 +6,7 @@ import { Connexion } from './pages/connexion/connexion';
 import { Inscription } from './pages/inscription/inscription';
 import { MesReservations } from './pages/mes-reservations/mes-reservations';
 import { Reserver } from './pages/reserver/reserver';
+import { Compte } from './pages/compte/compte';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'bornes', pathMatch: 'full' },
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'bornes', component: Bornes, canActivate: [authGuard] },
   { path: 'mes-reservations', component: MesReservations, canActivate: [authGuard] },
   { path: 'reserver/:borneId', component: Reserver, canActivate: [authGuard] },
+  { path: 'compte', component: Compte, canActivate: [authGuard] },
   { path: '**', redirectTo: 'bornes' },
 ];

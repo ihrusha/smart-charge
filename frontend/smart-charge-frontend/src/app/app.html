@@ -6,7 +6,10 @@
       <a routerLink="/bornes" routerLinkActive="actif">Bornes</a>
       <a routerLink="/mes-reservations" routerLinkActive="actif">Mes réservations</a>
     </nav>
-    <button type="button" class="lien" (click)="seDeconnecter()">Se déconnecter</button>
+    <a class="lien-compte" routerLink="/compte" routerLinkActive="actif" title="Mon compte">
+      <span class="icone-compte">👤</span>
+      <span class="texte-compte">Compte</span>
+    </a>
   }
 </header>
 

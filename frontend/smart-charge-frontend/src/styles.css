@@ -50,14 +50,31 @@ body {
   font-weight: bold;
 }
 
-.barre .lien {
+.barre .lien-compte {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
-  background: none;
-  border: none;
   color: #444;
-  cursor: pointer;
-  font-size: 15px;
+  text-decoration: none;
 }
+
+.barre .lien-compte.actif {
+  color: #16835d;
+  font-weight: bold;
+}
+
+.icone-compte {
+  font-size: 20px;
+}
+
+/* Sur petit écran, l'icône seule suffit */
+@media (max-width: 600px) {
+  .texte-compte {
+    display: none;
+  }
+}
+
 
 /* Bornes */
 
@@ -378,4 +395,35 @@ a.borne-card {
 
 a.borne-card:hover {
   border-color: #16835d;
+}
+
+/* Mon compte */
+
+.fiche-compte {
+  max-width: 480px;
+  margin-top: 20px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e3e6e5;
+  border-radius: 12px;
+}
+
+.ligne-compte {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eef1f0;
+}
+
+.ligne-compte .libelle {
+  color: #666;
+}
+
+.ligne-compte .valeur {
+  font-weight: bold;
+}
+
+.fiche-compte .bouton-secondaire {
+  margin-top: 20px;
 }

@@ -221,3 +221,17 @@ d'environnement n'ont pas été exportées dans le terminal.
 `services/auth` après un `git pull`.
 
 ## Organisation du dépôt
+
+smart-charge/
+├── bff/ BFF FastAPI
+├── frontend/ Application Angular
+├── infra/mongo/ Scripts d’initialisation MongoDB
+├── services/
+│ ├── auth/ Service d’authentification
+│ ├── bornes/ Service des bornes
+│ └── reservations/ Service des réservations
+├── docker-compose.yml
+└── .env.example
+
+
+Le travail passe par des branches et des pull requests vers `main`.
